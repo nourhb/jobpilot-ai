@@ -1,0 +1,12 @@
+# JobPilot AI - Worker service (Phase 1 placeholder — see apps/api/src/worker.ts)
+FROM node:20-slim AS base
+WORKDIR /app
+RUN corepack enable
+COPY . .
+RUN pnpm install --frozen-lockfile
+ENV DATABASE_URL="postgresql://placeholder:placeholder@localhost:5432/placeholder"
+RUN pnpm --filter api exec prisma generate --schema ../../prisma/schema.prisma
+
+ENV NODE_ENV=production
+WORKDIR /app/apps/api
+CMD ["pnpm", "run", "start:worker"]

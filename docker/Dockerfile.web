@@ -1,0 +1,21 @@
+# JobPilot AI - Web frontend (static build served by nginx)
+#
+# Phase 1 note: installs the full workspace (simpler & correctness-first
+# over a slimmer multi-package-json COPY trick, which proved fragile with
+# pnpm's filtered installs). Layer-cache optimization can be revisited in
+# a later phase.
+FROM node:20-slim AS build
+WORKDIR /app
+RUN corepack enable
+
+COPY . .
+RUN pnpm install --frozen-lockfile
+
+ARG VITE_API_URL=http://localhost:4000
+ENV VITE_API_URL=$VITE_API_URL
+RUN pnpm --filter web run build
+
+FROM nginx:1.27-alpine AS runner
+COPY --from=build /app/apps/web/dist /usr/share/nginx/html
+COPY docker/nginx.web.conf /etc/nginx/conf.d/default.conf
+EXPOSE 80

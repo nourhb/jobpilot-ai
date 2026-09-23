@@ -1,0 +1,66 @@
+// JobPilot AI - Prisma schema
+//
+// PHASE 1 SCOPE: only the models required for authentication + audit
+// logging exist so far (User, AuditLog). Profile, Resume, WorkExperience,
+// Education, Skill, Certification, JobPreference, Job, JobSource,
+// JobMatch, Application, ApplicationAnswer, CoverLetter,
+// ApplicationEvent, Agent, AgentRun, Notification and Interview are added
+// incrementally in later phases (see docs/architecture.md, "Development
+// Phases") rather than generated up front against an empty feature set.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  firstName    String
+  lastName     String
+  phone        String?
+  city         String?
+  province     String?
+  country      String?
+  linkedinUrl  String?
+  githubUrl    String?
+  portfolioUrl String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  auditLogs AuditLog[]
+
+  @@map("users")
+}
+
+/// Grows as new phases introduce new audited events (JOB_DISCOVERED,
+/// APPLICATION_SUBMITTED, AGENT_STARTED, ...). Only auth-related values
+/// exist today.
+enum AuditAction {
+  USER_REGISTERED
+  USER_LOGIN
+  USER_LOGIN_FAILED
+  USER_LOGOUT
+}
+
+model AuditLog {
+  id         String      @id @default(uuid())
+  userId     String?
+  user       User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action     AuditAction
+  entityType String?
+  entityId   String?
+  /// Never store secrets, passwords, full CV text or full application
+  /// answers here (see docs/security.md).
+  metadata   Json?
+  createdAt  DateTime    @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
