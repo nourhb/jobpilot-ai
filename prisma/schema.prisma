@@ -10,6 +10,8 @@
 //          apps/api/src/profile/truthLayer.ts).
 // PHASE 3: JobSource, Job (discovery, normalization, deduplication --
 //          see apps/api/src/jobs/).
+// PHASE 4: JobPreference, JobMatch (hybrid scoring + AI semantic
+//          interpretation -- see apps/api/src/matching/).
 
 generator client {
   provider = "prisma-client-js"
@@ -36,8 +38,10 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  auditLogs AuditLog[]
-  profile   Profile?
+  auditLogs      AuditLog[]
+  profile        Profile?
+  jobPreference  JobPreference?
+  jobMatches     JobMatch[]
 
   @@map("users")
 }
@@ -54,6 +58,7 @@ enum AuditAction {
   CV_PARSED
   PROFILE_ITEM_VERIFIED
   JOB_DISCOVERY_RUN
+  PREFERENCES_UPDATED
 }
 
 model AuditLog {
@@ -362,10 +367,148 @@ model Job {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
+  matches JobMatch[]
+
   @@unique([sourceId, externalId])
   @@index([sourceId])
   @@index([externalId])
   @@index([contentHash])
   @@index([secondaryDedupeKey])
   @@map("jobs")
+}
+
+// ---------------------------------------------------------------------
+// PHASE 4: Job preferences + AI-assisted matching.
+//
+// Section 26 of the spec: "Don't rely exclusively on the LLM. Use a
+// hybrid score." The numeric score and every weighted component below
+// are always computed deterministically by
+// apps/api/src/matching/scoring.ts; the AI provider is only ever asked
+// for narrative interpretation (reasons/missingRequirements/riskFlags)
+// layered on top of a score it did not produce -- consistent with "the
+// LLM is not the source of truth" (see AGENTS/architecture notes).
+// ---------------------------------------------------------------------
+
+/// One row per user (section 12). Drives both the hard filters
+/// (apps/api/src/matching/hardFilters.ts) and the "preferences" 5% slice
+/// of the hybrid score.
+model JobPreference {
+  id     String @id @default(uuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  targetTitles   String[] @default([])
+  excludedTitles String[] @default([])
+
+  countries String[] @default(["Canada"])
+  provinces String[] @default([])
+  cities    String[] @default([])
+
+  remote Boolean @default(true)
+  hybrid Boolean @default(true)
+  onsite Boolean @default(true)
+
+  minSalary Int?
+  maxSalary Int?
+
+  employmentTypes JobEmploymentType[] @default([])
+  /// Free-text (e.g. "entry", "mid", "senior", "lead") -- Job.experienceLevel
+  /// is itself unstructured (section 13), so there is no fixed enum to
+  /// validate against yet.
+  experienceLevels String[] @default([])
+
+  maxDistanceKm Int?
+
+  /// Section 27 hard filter: skip jobs when the candidate's own
+  /// Profile.workAuthorization has not been declared -- there is no
+  /// reliable way to answer a "legally authorized to work?" application
+  /// question (section 32) without it.
+  requireWorkAuthorization Boolean @default(true)
+  /// Section 27 hard filter: when the candidate's Profile.requiresSponsorship
+  /// is true, skip jobs whose description text signals the employer will
+  /// not sponsor (apps/api/src/matching/sponsorshipSignal.ts -- a
+  /// keyword heuristic over the posting text, since no source adapter
+  /// exposes a structured "sponsorship offered" field). Never skips
+  /// anything when the candidate does not require sponsorship.
+  requireNoSponsorship Boolean @default(true)
+
+  /// Section 28: the user's own auto-apply threshold. Match categories
+  /// (EXCELLENT/STRONG/POTENTIAL/LOW) are fixed system buckets computed
+  /// from the score alone; this is the separate, user-chosen cutoff that
+  /// turns a category into an actual APPLY decision (see JobMatch.decision).
+  minimumMatchScore Int @default(70)
+
+  autoApplyEnabled          Boolean @default(false)
+  autoCoverLetterEnabled    Boolean @default(false)
+  autoQuestionAnswerEnabled Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("job_preferences")
+}
+
+/// Section 28 system thresholds -- fixed, not user-configurable ("These
+/// are system thresholds, not a judgment about the job itself").
+enum MatchCategory {
+  EXCELLENT
+  STRONG
+  POTENTIAL
+  LOW
+}
+
+/// The system's own authoritative decision, derived deterministically
+/// from `score` vs. the user's JobPreference.minimumMatchScore (or from
+/// a hard filter having skipped the job outright). Distinct from
+/// `aiSuggestedDecision`, which is the AI provider's own advisory
+/// opinion and is never used to drive auto-apply.
+enum MatchDecision {
+  APPLY
+  REVIEW
+  SKIP
+}
+
+model JobMatch {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobId  String
+  job    Job    @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  /// Final weighted score, 0-100 (section 26: 30% skills + 20% experience
+  /// + 15% title similarity + 10% location + 10% authorization + 5%
+  /// salary + 5% employment type + 5% preferences).
+  score         Int
+  matchCategory MatchCategory
+  decision      MatchDecision
+
+  skillsScore         Int
+  experienceScore     Int
+  titleScore          Int
+  locationScore       Int
+  authorizationScore  Int
+  salaryScore         Int
+  employmentTypeScore Int
+  preferencesScore    Int
+
+  /// Populated only when a hard filter (section 27) skipped this job
+  /// before scoring; score/component fields are all 0 in that case.
+  skippedReason String?
+
+  /// AI semantic interpretation layered on top of the deterministic
+  /// score (section 25) -- never the source of the numeric scores above.
+  aiSuggestedDecision String?
+  reasons             String[] @default([])
+  missingRequirements String[] @default([])
+  riskFlags           String[] @default([])
+  aiModel             String?
+  aiPromptVersion     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, jobId])
+  @@index([userId])
+  @@index([jobId])
+  @@map("job_matches")
 }

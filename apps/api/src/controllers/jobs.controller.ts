@@ -1,6 +1,8 @@
 import type { Request, Response } from "express";
 import type { JobListQuery } from "@jobpilot/shared";
 import { jobService } from "../jobs/job.service";
+import { jobMatchService } from "../matching/jobMatch.service";
+import { requireUserId } from "../utils/requireUserId";
 
 export const jobsController = {
   async listJobs(req: Request<unknown, unknown, unknown, JobListQuery>, res: Response): Promise<void> {
@@ -11,5 +13,10 @@ export const jobsController = {
   async getJob(req: Request<{ id: string }>, res: Response): Promise<void> {
     const job = await jobService.getJobById(req.params.id);
     res.status(200).json({ success: true, data: { job } });
+  },
+
+  async getJobMatch(req: Request<{ id: string }>, res: Response): Promise<void> {
+    const match = await jobMatchService.getOrComputeMatch(requireUserId(req), req.params.id);
+    res.status(200).json({ success: true, data: { match } });
   },
 };

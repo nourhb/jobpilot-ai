@@ -8,6 +8,9 @@ import { RegisterPage } from "@/pages/RegisterPage";
 import { DashboardPage } from "@/pages/DashboardPage";
 import { ProfilePage } from "@/pages/ProfilePage";
 import { ResumePage } from "@/pages/ResumePage";
+import { JobsPage } from "@/pages/JobsPage";
+import { JobDetailPage } from "@/pages/JobDetailPage";
+import { PreferencesPage } from "@/pages/PreferencesPage";
 import { ComingSoonPage } from "@/pages/ComingSoonPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 
@@ -26,7 +29,8 @@ export default function App() {
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
           <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/jobs" element={<ComingSoonPage title="Find Jobs" phase="Phase 3 — Job Discovery" />} />
+          <Route path="/jobs" element={<JobsPage />} />
+          <Route path="/jobs/:id" element={<JobDetailPage />} />
           <Route
             path="/applications"
             element={<ComingSoonPage title="Applications" phase="Phase 6 — Application Engine" />}
@@ -34,10 +38,7 @@ export default function App() {
           <Route path="/agent" element={<ComingSoonPage title="Agent" phase="Phase 8 — Autonomous Agent" />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/resume" element={<ResumePage />} />
-          <Route
-            path="/preferences"
-            element={<ComingSoonPage title="Preferences" phase="Phase 4 — AI Matching" />}
-          />
+          <Route path="/preferences" element={<PreferencesPage />} />
           <Route
             path="/analytics"
             element={<ComingSoonPage title="Analytics" phase="Phase 9 — Dashboard + Analytics" />}

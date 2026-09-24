@@ -7,20 +7,9 @@ import type {
   VerifyProfileItemsInput,
   WorkExperienceInput,
 } from "@jobpilot/shared";
-import type { RequestUser } from "../types/express";
 import { profileService } from "../profile/profile.service";
 import { AppError } from "../middleware/errorHandler";
-
-/**
- * Accepts any `Request<...>` instantiation (not just the default
- * `Request`) -- narrower `Params`/`ReqBody` generics used by individual
- * controller methods are not structurally assignable to plain `Request`,
- * so this only requires the one field it actually needs.
- */
-function requireUserId(req: { user?: RequestUser }): string {
-  if (!req.user) throw new AppError(401, "UNAUTHENTICATED", "Authentication is required for this request.");
-  return req.user.id;
-}
+import { requireUserId } from "../utils/requireUserId";
 
 export const profileController = {
   async getProfile(req: Request, res: Response): Promise<void> {

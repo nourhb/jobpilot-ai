@@ -142,7 +142,22 @@ implemented so far:
   adapters are deferred to Phase 7; a manual
   `pnpm --filter api run discover:run` script exists to trigger
   discovery locally until Phase 8's scheduled worker replaces it.
+- **Phase 4 (done):** `JobPreference` model (`GET`/`PUT /api/preferences`)
+  and job matching (`GET /api/jobs/:id/match`). Section 26's hybrid
+  score is 100% deterministic (apps/api/src/matching/scoring.ts) --
+  skills/experience/title/location/authorization/salary/employment-type/
+  preferences components, each independently documented and unit
+  tested. Hard filters (apps/api/src/matching/hardFilters.ts, section
+  27) run first and skip a job before it is ever scored. The AI
+  provider (packages/ai/src/matching) is only ever asked to narrate an
+  already-computed score (reasons/missingRequirements/riskFlags) --
+  `JobMatch.decision`, the system's authoritative APPLY/REVIEW/SKIP
+  call, is derived from the score vs. the user's own
+  `minimumMatchScore`, never from the AI's advisory
+  `aiSuggestedDecision`. Minimal `/jobs`, `/jobs/:id`, and
+  `/preferences` frontend pages replace their Phase 3/4 "coming soon"
+  placeholders.
 
-Phases 4–11 (AI matching, cover letters, application engine + Mock
-ATS, real ATS adapters, autonomous agent scheduler, dashboard,
-production security/CI, Kubernetes) are intentionally not started yet.
+Phases 5–11 (cover letters, application engine + Mock ATS, real ATS
+adapters, autonomous agent scheduler, dashboard, production
+security/CI, Kubernetes) are intentionally not started yet.

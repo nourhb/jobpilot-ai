@@ -11,3 +11,4 @@ jobsRouter.use(requireAuth);
 
 jobsRouter.get("/", validateQuery(jobListQuerySchema), asyncHandler(jobsController.listJobs));
 jobsRouter.get("/:id", asyncHandler(jobsController.getJob));
+jobsRouter.get("/:id/match", asyncHandler(jobsController.getJobMatch));

@@ -105,3 +105,22 @@ export type JobStatus = (typeof JOB_STATUSES)[number];
 /** See packages/source-adapters -- one JobSourceAdapter implementation per value. */
 export const JOB_SOURCE_TYPES = ["GREENHOUSE", "LEVER", "ASHBY", "WORKABLE", "COMPANY", "MOCK"] as const;
 export type JobSourceTypeName = (typeof JOB_SOURCE_TYPES)[number];
+
+/**
+ * Phase 4 (section 28: Match Categories) -- fixed system thresholds, not
+ * user-configurable. Kept in sync by hand with the Prisma enum
+ * `MatchCategory`. See apps/api/src/matching/scoring.ts for the score ->
+ * category mapping (90-100 EXCELLENT, 80-89 STRONG, 70-79 POTENTIAL,
+ * <70 LOW).
+ */
+export const MATCH_CATEGORIES = ["EXCELLENT", "STRONG", "POTENTIAL", "LOW"] as const;
+export type MatchCategory = (typeof MATCH_CATEGORIES)[number];
+
+/**
+ * The system's own authoritative decision (score vs. the user's
+ * JobPreference.minimumMatchScore, or SKIP from a hard filter) -- never
+ * the AI provider's own advisory opinion. Kept in sync by hand with the
+ * Prisma enum `MatchDecision`.
+ */
+export const MATCH_DECISIONS = ["APPLY", "REVIEW", "SKIP"] as const;
+export type MatchDecision = (typeof MATCH_DECISIONS)[number];
