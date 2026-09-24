@@ -59,6 +59,11 @@ export const jobRepository = {
     return prisma.job.findUnique({ where: { id } });
   },
 
+  /** Includes the parent JobSource -- needed to route to the right ApplicationAdapter (section 38) by source type. */
+  findByIdWithSource(id: string) {
+    return prisma.job.findUnique({ where: { id }, include: { source: true } });
+  },
+
   findBySourceAndExternalId(sourceId: string, externalId: string) {
     return prisma.job.findUnique({ where: { sourceId_externalId: { sourceId, externalId } } });
   },

@@ -192,6 +192,73 @@ implemented so far:
     authorized" -> YES) to keep the implementation honest against the
     spec's stated expectations, not just internal consistency.
 
-Phases 6–11 (application engine + Mock ATS, real ATS adapters,
-autonomous agent scheduler, dashboard, production security/CI,
-Kubernetes) are intentionally not started yet.
+- **Phase 6 (done):** The Application Engine, Mock ATS, Validator, and
+  Policy Engine (sections 34-38, 42, 60, 76-78) -- the phase where
+  Phases 4 and 5 are wired together into real `Application` rows for
+  the first time.
+  - `Application`/`CoverLetter`/`ApplicationAnswer`/`ApplicationEvent`
+    (apps/api/src/applications/) -- `CoverLetter`/`ApplicationAnswer`
+    were deliberately deferred out of Phase 5 specifically so they
+    could be FK'd to `Application` here, per the spec's own model
+    design. `jobSnapshot`/`candidateSnapshot` are immutable JSON
+    captured once at creation (master prompt: "keep immutable
+    snapshots..."); `ApplicationEvent` is the append-only "TIMELINE"
+    the section 45 UI needs. `idempotencyKey` +
+    `@@unique([userId, jobId])` implement section 42 exactly --
+    `applicationService.createAndProcess` returns the existing row
+    instead of ever creating a second one for the same (user, job).
+  - Mock ATS (apps/api/src/mockAts, section 60): a genuinely separate
+    HTTP surface (`/api/_mock-ats/*`, dev-only, gated the same way as
+    `/api/sources`) with `/jobs/:externalId`,
+    `/jobs/:externalId/questions`, and
+    `POST /jobs/:externalId/applications`. `mockAtsAdapter`
+    (apps/api/src/applications/adapters) is a real `fetch`-based HTTP
+    client against it -- deliberately built the same shape Phase 7's
+    real Lever/Ashby/Greenhouse adapters will use, so this phase
+    exercises genuine network/error-handling code (CAPTCHA-as-409,
+    non-2xx responses), not just in-process function calls. Every
+    behavior (success, CAPTCHA, source-down, an unanswerable/
+    high-risk question) is driven by a substring marker in the job's
+    own `externalId` -- no hidden state.
+  - `resolveApplicationAdapter` (section 38's `ApplicationRouter`)
+    resolves an adapter only for `MOCK`-sourced jobs today; every real
+    ATS source type resolves to `null`, which
+    `application.service.ts` treats as an automatic MANUAL_REVIEW --
+    "if an application cannot safely or legitimately be automated,
+    create a MANUAL_REVIEW task" (master prompt), directly explaining
+    why real job-board applications will stay in manual review until
+    Phase 7.
+  - `applicationValidator.ts` (section 36) reproduces the spec's own
+    PASS/FAIL checklist verbatim. `policyEngine.ts`
+    (`evaluateApplication`, section 78) enforces section 76's
+    hard-coded safety rules (RULE-001 through RULE-010), distinguishing
+    a hard stop (duplicate/expired/out-of-scope -> straight to a
+    terminal status, no human needed) from a soft stop that needs a
+    human (an unanswerable question, an unsupported source ->
+    `requiresManualReview: true`, matching the spec's own worked
+    example exactly).
+  - Section 77's "Zero Mistake" architecture is enforced structurally,
+    not just by convention: `application.service.ts` has no code path
+    from an AI-generated cover letter or question answer directly to
+    `adapter.submit()` -- everything passes through
+    `validateApplication` AND `evaluateApplication` first.
+  - No new user-facing "create application" route exists (the spec's
+    own route list only has list/detail/retry/skip) -- Applications
+    are meant to be created by the Phase 8 agent scheduler. A
+    `pnpm --filter api run apply:run <email> <jobId>` script is the
+    interim manual trigger, the same stopgap role `discover:run` plays
+    for Phase 3.
+  - Verified end-to-end via Docker Compose against a live Postgres
+    database: a real Application row progressed
+    QUALIFIED -> PREPARING -> VALIDATING -> MANUAL_REVIEW (a numeric
+    experience question correctly BLOCKed since the candidate's
+    verified Kubernetes skill had no `yearsExperience` on file, and no
+    resume/phone were on file either); re-running was confirmed
+    idempotent (same Application id, no duplicate row); `retry`
+    correctly replaced the prior attempt's answers rather than
+    accumulating duplicates; `GET /api/applications` (with a `status`
+    filter) and `POST /api/applications/:id/skip` were both exercised
+    successfully over real HTTP.
+
+Phases 7–11 (real ATS adapters, autonomous agent scheduler, dashboard,
+production security/CI, Kubernetes) are intentionally not started yet.

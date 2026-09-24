@@ -135,6 +135,35 @@ export type MatchDecision = (typeof MATCH_DECISIONS)[number];
  * 37). HIGH_RISK is always blocked outright; UNKNOWN is blocked whenever
  * fact retrieval comes back empty, per section 32 ("do not guess").
  */
+/**
+ * Phase 6 (section 34 + the master prompt's own "APPLICATION STATES"
+ * list, combined into a single enum). Kept in sync by hand with the
+ * Prisma enum `ApplicationStatus`. An Application is only ever created
+ * once a JobMatch already exists (decision APPLY or REVIEW) -- see
+ * apps/api/src/applications/application.service.ts -- so in practice
+ * every Application starts life at QUALIFIED; DISCOVERED/NORMALIZED/
+ * MATCHED are kept in the enum for spec fidelity and to leave room for
+ * a future worker that persists the whole pipeline from the start.
+ */
+export const APPLICATION_STATUSES = [
+  "DISCOVERED",
+  "NORMALIZED",
+  "MATCHED",
+  "QUALIFIED",
+  "PREPARING",
+  "VALIDATING",
+  "READY",
+  "SUBMITTING",
+  "SUBMITTED",
+  "MANUAL_REVIEW",
+  "BLOCKED",
+  "FAILED",
+  "SKIPPED",
+  "DUPLICATE",
+  "EXPIRED",
+] as const;
+export type ApplicationStatus = (typeof APPLICATION_STATUSES)[number];
+
 export const QUESTION_CATEGORIES = [
   "PROFILE_FACT",
   "EXPERIENCE_FACT",

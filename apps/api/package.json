@@ -9,6 +9,7 @@
     "start": "tsx src/server.ts",
     "start:worker": "tsx src/worker.ts",
     "discover:run": "tsx src/scripts/discoverJobs.ts",
+    "apply:run": "tsx src/scripts/applyToJob.ts",
     "lint": "eslint src --ext .ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",

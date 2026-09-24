@@ -12,6 +12,9 @@
 //          see apps/api/src/jobs/).
 // PHASE 4: JobPreference, JobMatch (hybrid scoring + AI semantic
 //          interpretation -- see apps/api/src/matching/).
+// PHASE 6: Application, CoverLetter, ApplicationAnswer, ApplicationEvent
+//          (the Application Engine, Mock ATS, Validator, and Policy
+//          Engine -- see apps/api/src/applications/).
 
 generator client {
   provider = "prisma-client-js"
@@ -42,6 +45,7 @@ model User {
   profile        Profile?
   jobPreference  JobPreference?
   jobMatches     JobMatch[]
+  applications   Application[]
 
   @@map("users")
 }
@@ -367,7 +371,8 @@ model Job {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
-  matches JobMatch[]
+  matches      JobMatch[]
+  applications Application[]
 
   @@unique([sourceId, externalId])
   @@index([sourceId])
@@ -511,4 +516,177 @@ model JobMatch {
   @@index([userId])
   @@index([jobId])
   @@map("job_matches")
+}
+
+// ---------------------------------------------------------------------
+// PHASE 6: The Application Engine, Mock ATS, Validator, and Policy
+// Engine.
+//
+// Section 34's state machine plus its failure states, combined into one
+// enum exactly as the master prompt's own "APPLICATION STATES" list
+// enumerates them. An Application row is only ever created once a
+// JobMatch with decision APPLY or REVIEW already exists for the
+// (userId, jobId) pair -- DISCOVERED/NORMALIZED/MATCHED are considered
+// satisfied by the Job/JobMatch rows that already exist by that point,
+// so apps/api/src/applications/application.service.ts starts a new
+// Application directly at QUALIFIED.
+// ---------------------------------------------------------------------
+
+enum ApplicationStatus {
+  DISCOVERED
+  NORMALIZED
+  MATCHED
+  QUALIFIED
+  PREPARING
+  VALIDATING
+  READY
+  SUBMITTING
+  SUBMITTED
+  MANUAL_REVIEW
+  BLOCKED
+  FAILED
+  SKIPPED
+  DUPLICATE
+  EXPIRED
+}
+
+/// Kept in sync by hand with packages/shared's QUESTION_CATEGORIES
+/// (section 31).
+enum QuestionCategory {
+  PROFILE_FACT
+  EXPERIENCE_FACT
+  EDUCATION_FACT
+  YES_NO_FACT
+  PREFERENCE
+  MOTIVATIONAL
+  UNKNOWN
+  LEGAL
+  HIGH_RISK
+}
+
+/// Section 42 (Idempotency) + master prompt ("Keep immutable snapshots
+/// of the job, candidate information, cover letter and answers used for
+/// each application"). `jobSnapshot`/`candidateSnapshot` are captured
+/// once at creation time and never updated afterward, even if the
+/// underlying Job or Profile rows change later -- an Application must
+/// always be explainable from exactly what was true when it ran.
+model Application {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobId  String
+  job    Job    @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  status ApplicationStatus @default(QUALIFIED)
+
+  /// sha256(userId + job.source.type + job.externalId) -- section 42:
+  /// "If worker crashes after submission but before saving the result,
+  /// restarting must not submit again."
+  idempotencyKey String @unique
+
+  jobSnapshot       Json
+  candidateSnapshot Json
+
+  matchScore    Int
+  matchCategory MatchCategory
+
+  /// Populated whenever the Policy Engine (section 78) or Validator
+  /// (section 36) routes the application to manual review instead of
+  /// submitting (CAPTCHA, unsupported source, unanswerable question,
+  /// failed fact check, ...). Surfaced verbatim in the Manual Review UI
+  /// (section 46).
+  manualReviewReason String?
+  /// Populated when the Policy Engine outright refuses the application
+  /// (e.g. a hard safety-rule violation) rather than merely deferring
+  /// it to a human.
+  blockedReason String?
+  /// Populated on an adapter-level submission failure (section 38:
+  /// distinct from BLOCKED/MANUAL_REVIEW, which are policy decisions).
+  failureReason String?
+
+  submittedAt            DateTime?
+  externalApplicationId  String?
+
+  coverLetter CoverLetter?
+  answers     ApplicationAnswer[]
+  events      ApplicationEvent[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// Section 42: "Application table: unique(userId, jobId)" -- the
+  /// database-level backstop behind the Policy Engine's own duplicate
+  /// check (RULE-006).
+  @@unique([userId, jobId])
+  @@index([userId])
+  @@index([jobId])
+  @@index([status])
+  @@map("applications")
+}
+
+/// Section 29/30. One row per Application (an application is never
+/// re-generated in place -- retrying creates a new cover letter and
+/// this row is simply overwritten, since only the latest attempt's
+/// content is ever actually submittable).
+model CoverLetter {
+  id            String      @id @default(uuid())
+  applicationId String      @unique
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  content      String
+  model        String
+  promptVersion String
+
+  createdAt DateTime @default(now())
+
+  @@map("cover_letters")
+}
+
+/// Section 31-33/37. One row per application-form question encountered,
+/// including BLOCKED ones -- the Manual Review UI (section 46) needs to
+/// show exactly which question(s) could not be answered and why.
+model ApplicationAnswer {
+  id            String      @id @default(uuid())
+  applicationId String
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  questionText String
+  category     QuestionCategory
+
+  status String // "ANSWERED" | "BLOCKED" -- mirrors QuestionAnswerResult (@jobpilot/shared)
+  answer String?
+  /// "FACT" | "AI_GROUNDED" | null (null only when status is BLOCKED)
+  source String?
+  blockedReason String?
+
+  /// Section 37: the Fact Checker's own verdict on AI_GROUNDED answers
+  /// (null for FACT answers, which never go through the AI at all).
+  factCheckValid       Boolean?
+  factCheckConfidence  Float?
+  factCheckUnsupported String[] @default([])
+
+  aiModel         String?
+  aiPromptVersion String?
+
+  createdAt DateTime @default(now())
+
+  @@index([applicationId])
+  @@map("application_answers")
+}
+
+/// Section 45's "TIMELINE" -- an append-only audit trail of every state
+/// transition a single Application went through, distinct from the
+/// account-level AuditLog (which never stores per-application detail).
+model ApplicationEvent {
+  id            String      @id @default(uuid())
+  applicationId String
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  status  ApplicationStatus
+  message String?
+
+  createdAt DateTime @default(now())
+
+  @@index([applicationId])
+  @@map("application_events")
 }
