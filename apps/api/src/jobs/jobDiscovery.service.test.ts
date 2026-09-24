@@ -130,6 +130,34 @@ describe("jobDiscoveryService", () => {
       expect(result.errors).toBe(1);
       expect(result.stored).toBe(1);
     });
+
+    it("records a source-level error (not a crash) when the adapter itself is disabled/unavailable", async () => {
+      const { getAdapterForSource } = await import("../adapters/registry");
+      const { jobDiscoveryService } = await import("./jobDiscovery.service");
+
+      vi.mocked(getAdapterForSource).mockImplementation(() => {
+        throw new Error('Source type "GREENHOUSE" is disabled by its environment flag.');
+      });
+
+      const result = await jobDiscoveryService.runForSource({ id: "source-2", name: "greenhouse-acme", type: "GREENHOUSE", config: {} });
+
+      expect(result).toEqual({ sourceName: "greenhouse-acme", fetched: 0, stored: 0, skippedDuplicates: 0, errors: 1 });
+    });
+
+    it("records a source-level error (not a crash) when discoverJobs itself throws", async () => {
+      const { getAdapterForSource } = await import("../adapters/registry");
+      const { jobDiscoveryService } = await import("./jobDiscovery.service");
+
+      vi.mocked(getAdapterForSource).mockReturnValue({
+        sourceName: "greenhouse-acme",
+        discoverJobs: vi.fn().mockRejectedValue(new Error("network error")),
+        getJobDetails: vi.fn(),
+      });
+
+      const result = await jobDiscoveryService.runForSource({ id: "source-2", name: "greenhouse-acme", type: "GREENHOUSE", config: {} });
+
+      expect(result).toEqual({ sourceName: "greenhouse-acme", fetched: 0, stored: 0, skippedDuplicates: 0, errors: 1 });
+    });
   });
 
   describe("runForAllEnabledSources", () => {

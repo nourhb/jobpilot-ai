@@ -130,7 +130,7 @@ export const applicationService = {
       promptVersion: coverLetterResult.promptVersion,
     });
 
-    const adapter = resolveApplicationAdapter(job.source.type);
+    const adapter = resolveApplicationAdapter(job.source);
     if (!adapter) {
       const reason = "This job's source does not support automated submission yet.";
       await setStatus(application.id, "MANUAL_REVIEW", reason, { manualReviewReason: reason });

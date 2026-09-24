@@ -18,8 +18,8 @@ describe("normalizeRawJob", () => {
     expect(normalized.application).toEqual({ type: "API" });
   });
 
-  it("throws a clear not-implemented error for sources without a normalizer yet", async () => {
+  it("throws a clear not-implemented error for sources without a normalizer (out of scope)", async () => {
     const jobs = await mockJobSourceAdapter.discoverJobs();
-    expect(() => normalizeRawJob("GREENHOUSE", jobs[0]!)).toThrow(/not implemented yet/i);
+    expect(() => normalizeRawJob("WORKABLE", jobs[0]!)).toThrow(/not implemented/i);
   });
 });

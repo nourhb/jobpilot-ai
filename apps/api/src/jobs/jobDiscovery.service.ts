@@ -60,8 +60,20 @@ export const jobDiscoveryService = {
   async runForSource(source: { id: string; name: string; type: string; config: unknown }): Promise<JobDiscoverySourceResult> {
     const result: JobDiscoverySourceResult = { sourceName: source.name, fetched: 0, stored: 0, skippedDuplicates: 0, errors: 0 };
 
-    const adapter = getAdapterForSource(source as never);
-    const rawJobs = await adapter.discoverJobs();
+    // Building the adapter and discovering jobs both belong in the try
+    // block (not just per-job normalization below): a disabled real
+    // source (Phase 7's env-flag kill switch) or a real source that's
+    // genuinely down must not crash the whole multi-source discovery
+    // run -- it should be recorded as a source-level error instead.
+    let rawJobs;
+    try {
+      const adapter = getAdapterForSource(source as never);
+      rawJobs = await adapter.discoverJobs();
+    } catch (error) {
+      result.errors += 1;
+      logger.error({ err: error, sourceName: source.name }, "Failed to discover jobs from source");
+      return result;
+    }
     result.fetched = rawJobs.length;
 
     for (const rawJob of rawJobs) {

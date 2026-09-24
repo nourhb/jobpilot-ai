@@ -260,5 +260,58 @@ implemented so far:
     filter) and `POST /api/applications/:id/skip` were both exercised
     successfully over real HTTP.
 
-Phases 7–11 (real ATS adapters, autonomous agent scheduler, dashboard,
-production security/CI, Kubernetes) are intentionally not started yet.
+- **Phase 7 (done):** Real Greenhouse/Lever/Ashby adapters (sections
+  14-18), fixture-tested only, per the project's `unit_fixtures`
+  decision -- real HTTP clients, never called against a live employer.
+  - Each source (`packages/source-adapters/src/adapters/{greenhouse,lever,ashby}/`)
+    is a plain `fetch`-based client against that platform's real,
+    public, documented, unauthenticated API (Greenhouse's Job Board
+    API, Lever's Postings API, Ashby's Job Posting API -- the exact
+    URLs section 1/17/18 cite), composed into a `JobSourceAdapter`
+    (section 14) internally organized as the four named responsibilities
+    each source's own spec section calls for (e.g.
+    `LeverDiscoveryService`/`LeverJobDetailsService`/
+    `LeverApplicationFormService`/`LeverApplicationService`).
+  - **Greenhouse's `submitApplication` is deliberately left
+    unimplemented** -- its public Job Board API is read-only; real
+    submission requires a private, per-employer Harvest API key this
+    project does not have. A Greenhouse-sourced job therefore always
+    resolves to no submission adapter, same as before Phase 7, which
+    `application.service.ts` correctly turns into MANUAL_REVIEW.
+    Lever and Ashby *do* implement `submitApplication`, matching the
+    spec's own explicit claim that both document a public
+    form-retrieval + submission flow; a 403/429 from either is treated
+    as an anti-bot signal (never a bypass attempt) and surfaced as
+    `MANUAL_REVIEW_REQUIRED`, not retried.
+  - `normalizeGreenhouseJob`/`normalizeLeverJob`/`normalizeAshbyJob`
+    (`packages/source-adapters/src/normalize/`) are wired into
+    `normalizeRawJob`'s dispatcher (section 19). Greenhouse jobs
+    normalize to `application.type: "MANUAL"` (matching its read-only
+    reality); Lever/Ashby normalize to `"API"`.
+  - `sourceAdapterRegistry` (section 15) now creates real Greenhouse/
+    Lever/Ashby adapters from a `JobSource.config` (board token /
+    company slug / job board name) -- registering a factory only makes
+    the registry *able* to build the adapter; it causes no network
+    traffic by itself.
+  - Two independent, coarse kill switches gate any actual outbound call
+    to a real employer, both defaulting to off (`local_only` decision):
+    `apps/api/src/adapters/registry.ts` (discovery) and
+    `apps/api/src/applications/adapters/applicationRouter.ts`
+    (submission) both check `GREENHOUSE_ENABLED`/`LEVER_ENABLED`/
+    `ASHBY_ENABLED` (`.env.example`, defined since Phase 1) before ever
+    resolving a real adapter -- disabled means the exact same behavior
+    as before Phase 7 (discovery: a clean per-source error, not a
+    crash; submission: MANUAL_REVIEW).
+  - `sourceAdapterBridge.ts` (apps/api) adapts any
+    `JobSourceAdapter` that implements `getApplicationForm`/
+    `submitApplication` into the `ApplicationAdapter` shape
+    `application.service.ts` (Phase 6) already knows how to drive --
+    so the "Zero Mistake" pipeline built in Phase 6 needed zero changes
+    to gain real submission support; only `resolveApplicationAdapter`
+    grew two new cases.
+  - 71 new tests (adapters, normalizers, registry wiring, env-flag
+    gating, the bridge) verified entirely against realistic recorded
+    fixtures -- no test in this phase makes a real network call.
+
+Phases 8–11 (autonomous agent scheduler, dashboard, production
+security/CI, Kubernetes) are intentionally not started yet.
