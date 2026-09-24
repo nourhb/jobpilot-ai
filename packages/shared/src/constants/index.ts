@@ -124,3 +124,26 @@ export type MatchCategory = (typeof MATCH_CATEGORIES)[number];
  */
 export const MATCH_DECISIONS = ["APPLY", "REVIEW", "SKIP"] as const;
 export type MatchDecision = (typeof MATCH_DECISIONS)[number];
+
+/**
+ * Phase 5 (section 31: Application Question Engine). Every application
+ * question is classified into exactly one of these before any answer is
+ * attempted. LEGAL and the *_FACT/YES_NO_FACT/PREFERENCE categories are
+ * answered by direct retrieval from the verified profile (never the AI);
+ * MOTIVATIONAL is the only category ever routed through the AI provider,
+ * and even then only after the answer passes the Fact Checker (section
+ * 37). HIGH_RISK is always blocked outright; UNKNOWN is blocked whenever
+ * fact retrieval comes back empty, per section 32 ("do not guess").
+ */
+export const QUESTION_CATEGORIES = [
+  "PROFILE_FACT",
+  "EXPERIENCE_FACT",
+  "EDUCATION_FACT",
+  "YES_NO_FACT",
+  "PREFERENCE",
+  "MOTIVATIONAL",
+  "UNKNOWN",
+  "LEGAL",
+  "HIGH_RISK",
+] as const;
+export type QuestionCategory = (typeof QUESTION_CATEGORIES)[number];

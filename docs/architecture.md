@@ -157,7 +157,41 @@ implemented so far:
   `aiSuggestedDecision`. Minimal `/jobs`, `/jobs/:id`, and
   `/preferences` frontend pages replace their Phase 3/4 "coming soon"
   placeholders.
+- **Phase 5 (done):** Cover Letter Generator, Application Question
+  Engine, and the Fact Checker (sections 29-33, 37) -- implemented as
+  pure, testable services, not yet wired to a route or persisted to a
+  table. The spec's own `CoverLetter`/`ApplicationAnswer` models are
+  FK'd to `Application`, which doesn't exist until Phase 6, so
+  persistence for both is deferred there; this phase focuses entirely
+  on the generation/validation logic Phase 6's Application Engine will
+  call.
+  - `generateCoverLetter` (packages/ai/src/coverLetter) -- text
+    generation (the first `AIProvider.generateText` consumer in the
+    codebase; every prior AI call used `generateStructured`), grounded
+    only in the verified profile + job + optional match context.
+  - The Application Question Engine (apps/api/src/questions) is a
+    3-stage pipeline: `classifyQuestion` (deterministic keyword
+    classification into the spec's 9 categories -- HIGH_RISK detection
+    in particular must be reliable, not probabilistic, so it is never
+    AI-driven) -> `retrieveFact` (direct lookup against the verified
+    profile; returns "not found" rather than ever guessing) ->
+    `generateAnswerForQuestion` (orchestrator). LEGAL questions
+    (work authorization/sponsorship) are answered directly from
+    `profile.authorization` and never reach the AI, exactly as section
+    32 specifies. MOTIVATIONAL questions (and descriptive experience
+    questions grounded on a verified-present skill) are the only ones
+    routed through `generateMotivationalAnswer`.
+  - `checkFacts` (packages/ai/src/factChecker) implements the
+    Anti-Fabrication Validator (section 37): every AI-generated answer
+    is checked against the verified profile before
+    `generateAnswerForQuestion` will ever return it: a failed check
+    BLOCKs the answer instead of surfacing a fabricated claim.
+  - Unit tests reproduce the spec's own section 61 examples verbatim
+    (e.g. "AWS = 0" -> "NO", not BLOCK; "Terraform absent, describe
+    your experience" -> BLOCK; "Open Work Permit, are you legally
+    authorized" -> YES) to keep the implementation honest against the
+    spec's stated expectations, not just internal consistency.
 
-Phases 5–11 (cover letters, application engine + Mock ATS, real ATS
-adapters, autonomous agent scheduler, dashboard, production
-security/CI, Kubernetes) are intentionally not started yet.
+Phases 6–11 (application engine + Mock ATS, real ATS adapters,
+autonomous agent scheduler, dashboard, production security/CI,
+Kubernetes) are intentionally not started yet.
