@@ -39,7 +39,7 @@ export interface WorkExperienceRecord {
   endDate: string | null;
   isCurrent: boolean;
   description: string | null;
-  source: "MANUAL" | "RESUME_PARSED";
+  source: "MANUAL" | "RESUME_PARSER";
   verified: boolean;
 }
 
@@ -51,7 +51,7 @@ export interface EducationRecord {
   startDate: string | null;
   endDate: string | null;
   description: string | null;
-  source: "MANUAL" | "RESUME_PARSED";
+  source: "MANUAL" | "RESUME_PARSER";
   verified: boolean;
 }
 
@@ -61,7 +61,7 @@ export interface SkillRecord {
   category: string | null;
   proficiency: string | null;
   yearsExperience: number | null;
-  source: "MANUAL" | "RESUME_PARSED";
+  source: "MANUAL" | "RESUME_PARSER";
   verified: boolean;
 }
 
@@ -71,7 +71,7 @@ export interface CertificationRecord {
   issuer: string | null;
   issuedAt: string | null;
   expiresAt: string | null;
-  source: "MANUAL" | "RESUME_PARSED";
+  source: "MANUAL" | "RESUME_PARSER";
   verified: boolean;
 }
 

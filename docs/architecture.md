@@ -126,11 +126,23 @@ uses it is built.
 See the project's technical specification for the full list; the phases
 implemented so far:
 
-- **Phase 1 (this phase):** monorepo, React, Node/Express, PostgreSQL,
+- **Phase 1 (done):** monorepo, React, Node/Express, PostgreSQL,
   Prisma, Docker, Authentication.
-- **Phase 2 (next):** Profile, CV upload, CV parser, Truth database
+- **Phase 2 (done):** Profile, CV upload, CV parser, Truth database
   (`VerifiedCandidateProfile`).
+- **Phase 3 (done):** Job source architecture (`JobSourceAdapter`,
+  `SourceAdapterRegistry`), raw → `NormalizedJob` normalization
+  dispatch, three-layer deduplication (unique `(sourceId, externalId)`,
+  `secondaryDedupeKey`, `contentHash`), idempotent
+  `jobDiscoveryService` (upserts, bumps `lastSeenAt` on re-discovery
+  instead of duplicating), `Job`/`JobSource` Prisma models, read-only
+  `GET /api/jobs` + `GET /api/jobs/:id`, dev-only `GET /api/sources`
+  diagnostic endpoint, `MockJobSourceAdapter` with 3 fixture jobs
+  proving the pipeline end-to-end. Real Lever/Ashby/Greenhouse
+  adapters are deferred to Phase 7; a manual
+  `pnpm --filter api run discover:run` script exists to trigger
+  discovery locally until Phase 8's scheduled worker replaces it.
 
-Phases 3–11 (job discovery, AI matching, cover letters, application
-engine + Mock ATS, real ATS adapters, autonomous agent, dashboard,
+Phases 4–11 (AI matching, cover letters, application engine + Mock
+ATS, real ATS adapters, autonomous agent scheduler, dashboard,
 production security/CI, Kubernetes) are intentionally not started yet.

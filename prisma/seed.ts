@@ -21,24 +21,35 @@ async function main() {
   const existing = await prisma.user.findUnique({ where: { email: demoEmail } });
   if (existing) {
     console.log(`Seed skipped: ${demoEmail} already exists.`);
-    return;
+  } else {
+    const passwordHash = await argon2.hash("DemoPassword123");
+
+    await prisma.user.create({
+      data: {
+        email: demoEmail,
+        passwordHash,
+        firstName: "Demo",
+        lastName: "Candidate",
+        city: "Toronto",
+        province: "Ontario",
+        country: "Canada",
+      },
+    });
+
+    console.log(`Seeded demo user: ${demoEmail} / DemoPassword123`);
   }
 
-  const passwordHash = await argon2.hash("DemoPassword123");
-
-  await prisma.user.create({
-    data: {
-      email: demoEmail,
-      passwordHash,
-      firstName: "Demo",
-      lastName: "Candidate",
-      city: "Toronto",
-      province: "Ontario",
-      country: "Canada",
-    },
+  // Phase 3: the Mock adapter is the only JobSource implemented so far
+  // (Greenhouse/Lever/Ashby/Workable arrive in Phase 7) -- enable it by
+  // default so `runForAllEnabledSources()` has something to discover.
+  // Each seed step must be independently idempotent -- this must run
+  // every time, not just on a fresh database.
+  await prisma.jobSource.upsert({
+    where: { name: "mock" },
+    update: {},
+    create: { name: "mock", type: "MOCK", enabled: true },
   });
-
-  console.log(`Seeded demo user: ${demoEmail} / DemoPassword123`);
+  console.log("Seeded job source: mock");
 }
 
 main()

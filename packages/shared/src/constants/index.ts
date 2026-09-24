@@ -74,3 +74,34 @@ export const COMMON_SKILL_CATEGORIES = [
   "Soft Skill",
   "Other",
 ] as const;
+
+/**
+ * Phase 3 (section 19: Job Normalization) -- every job source returns a
+ * different format; discovery normalizes everything down to these fixed
+ * vocabularies before storage. Kept in sync by hand with the Prisma
+ * enums `RemoteType` / `JobEmploymentType` / `JobApplicationType` /
+ * `JobStatus` / `JobSourceType`.
+ */
+export const JOB_REMOTE_TYPES = ["REMOTE", "HYBRID", "ONSITE", "UNKNOWN"] as const;
+export type JobRemoteType = (typeof JOB_REMOTE_TYPES)[number];
+
+export const JOB_EMPLOYMENT_TYPES = [
+  "FULL_TIME",
+  "PART_TIME",
+  "CONTRACT",
+  "TEMPORARY",
+  "INTERNSHIP",
+  "UNKNOWN",
+] as const;
+export type JobEmploymentType = (typeof JOB_EMPLOYMENT_TYPES)[number];
+
+export const JOB_APPLICATION_TYPES = ["API", "PUBLIC_FORM", "MANUAL", "UNKNOWN"] as const;
+export type JobApplicationType = (typeof JOB_APPLICATION_TYPES)[number];
+
+/** ACTIVE jobs are eligible for matching/application; see spec section 65. */
+export const JOB_STATUSES = ["ACTIVE", "EXPIRED", "REMOVED"] as const;
+export type JobStatus = (typeof JOB_STATUSES)[number];
+
+/** See packages/source-adapters -- one JobSourceAdapter implementation per value. */
+export const JOB_SOURCE_TYPES = ["GREENHOUSE", "LEVER", "ASHBY", "WORKABLE", "COMPANY", "MOCK"] as const;
+export type JobSourceTypeName = (typeof JOB_SOURCE_TYPES)[number];

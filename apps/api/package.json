@@ -8,6 +8,7 @@
     "build": "tsc --noEmit -p tsconfig.json",
     "start": "tsx src/server.ts",
     "start:worker": "tsx src/worker.ts",
+    "discover:run": "tsx src/scripts/discoverJobs.ts",
     "lint": "eslint src --ext .ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",

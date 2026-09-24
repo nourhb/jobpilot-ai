@@ -16,3 +16,15 @@ export function validateBody<T>(schema: ZodType<T>) {
     }
   };
 }
+
+/** Same as {@link validateBody}, but for `req.query` (e.g. list/pagination filters). */
+export function validateQuery<T>(schema: ZodType<T>) {
+  return (req: Request, _res: Response, next: NextFunction): void => {
+    try {
+      req.query = schema.parse(req.query) as unknown as Request["query"];
+      next();
+    } catch (error) {
+      next(error);
+    }
+  };
+}

@@ -8,6 +8,8 @@
 // PHASE 2: Profile, Resume, WorkExperience, Education, Skill,
 //          Certification (candidate truth layer -- see
 //          apps/api/src/profile/truthLayer.ts).
+// PHASE 3: JobSource, Job (discovery, normalization, deduplication --
+//          see apps/api/src/jobs/).
 
 generator client {
   provider = "prisma-client-js"
@@ -51,6 +53,7 @@ enum AuditAction {
   CV_UPLOADED
   CV_PARSED
   PROFILE_ITEM_VERIFIED
+  JOB_DISCOVERY_RUN
 }
 
 model AuditLog {
@@ -233,4 +236,136 @@ model Certification {
 
   @@index([profileId])
   @@map("certifications")
+}
+
+// ---------------------------------------------------------------------
+// PHASE 3: Job source architecture, normalization, deduplication.
+//
+// Every source (Greenhouse, Lever, Ashby, Workable, a bespoke company
+// API, or the in-repo Mock adapter used for dev/tests) implements the
+// same `JobSourceAdapter` contract (packages/source-adapters). The
+// discovery pipeline (apps/api/src/jobs/jobDiscovery.service.ts) fetches
+// RawJob[] from each enabled JobSource, normalizes it to a common shape,
+// computes a contentHash, de-duplicates, then upserts here. See spec
+// sections 13-21 and docs/architecture.md.
+// ---------------------------------------------------------------------
+
+enum JobSourceType {
+  GREENHOUSE
+  LEVER
+  ASHBY
+  WORKABLE
+  COMPANY
+  MOCK
+}
+
+/// One row per configured job source (e.g. "Greenhouse: Acme Corp").
+/// Real per-source credentials/board tokens belong in `config`, but
+/// never secrets -- those stay in environment variables (section 51).
+model JobSource {
+  id        String        @id @default(uuid())
+  name      String        @unique
+  type      JobSourceType
+  config    Json          @default("{}")
+  enabled   Boolean       @default(true)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  jobs Job[]
+
+  @@map("job_sources")
+}
+
+enum RemoteType {
+  REMOTE
+  HYBRID
+  ONSITE
+  UNKNOWN
+}
+
+enum JobEmploymentType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  TEMPORARY
+  INTERNSHIP
+  UNKNOWN
+}
+
+enum JobApplicationType {
+  API
+  PUBLIC_FORM
+  MANUAL
+  UNKNOWN
+}
+
+/// ACTIVE jobs are eligible for matching/application. EXPIRED/REMOVED
+/// are kept (never deleted -- section 65, application evidence must
+/// remain reproducible) but excluded from discovery-facing queries.
+enum JobStatus {
+  ACTIVE
+  EXPIRED
+  REMOVED
+}
+
+model Job {
+  id       String    @id @default(uuid())
+  sourceId String
+  source   JobSource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  /// The source's own identifier for this posting (e.g. a Greenhouse
+  /// gh_jid). Combined with sourceId, this is the primary duplicate key
+  /// (section 21).
+  externalId String
+
+  title           String
+  company         String
+  description     String
+  descriptionHtml String?
+
+  /// Original, unparsed location string from the source, kept for
+  /// display when structured city/province/country extraction fails.
+  locationRaw String?
+  city        String?
+  province    String?
+  country     String?
+
+  remoteType      RemoteType        @default(UNKNOWN)
+  employmentType  JobEmploymentType @default(UNKNOWN)
+  experienceLevel String?
+
+  salaryMin      Int?
+  salaryMax      Int?
+  salaryCurrency String?
+  salaryPeriod   String?
+
+  jobUrl          String?
+  applicationType JobApplicationType @default(UNKNOWN)
+  applicationUrl  String?
+
+  postedAt   DateTime?
+  expiresAt  DateTime?
+  lastSeenAt DateTime  @default(now())
+
+  /// Unmodified payload from the source adapter (RawJob.raw), kept for
+  /// audit/debugging and so normalization can be re-run if the mapping
+  /// logic changes without re-fetching from the source.
+  rawData Json
+  /// SHA-256 over normalized title+company+description -- tertiary
+  /// duplicate detection (see packages/source-adapters/src/dedup.ts).
+  contentHash String
+  /// normalized company::title::location -- secondary duplicate
+  /// detection, indexed for a direct lookup instead of recomputing over
+  /// every stored job on each discovery run.
+  secondaryDedupeKey String
+
+  status    JobStatus @default(ACTIVE)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@unique([sourceId, externalId])
+  @@index([sourceId])
+  @@index([externalId])
+  @@index([contentHash])
+  @@index([secondaryDedupeKey])
+  @@map("jobs")
 }
