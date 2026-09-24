@@ -24,4 +24,29 @@ export const userRepository = {
   create(input: CreateUserInput): Promise<User> {
     return prisma.user.create({ data: input });
   },
+
+  update(id: string, input: Partial<Pick<User, "firstName" | "lastName" | "phone" | "city" | "province" | "country" | "linkedinUrl" | "githubUrl" | "portfolioUrl">>): Promise<User> {
+    return prisma.user.update({ where: { id }, data: input });
+  },
+
+  /**
+   * Used by the resume parser (Phase 2) to fill in contact fields it
+   * found on the CV -- only when the field is currently empty, so a
+   * resume upload can never silently overwrite something the user
+   * already entered themselves.
+   */
+  async updateContactIfEmpty(
+    id: string,
+    fields: Partial<Pick<User, "city" | "country" | "linkedinUrl" | "githubUrl" | "portfolioUrl">>,
+  ): Promise<User> {
+    const user = await prisma.user.findUniqueOrThrow({ where: { id } });
+    const data: Record<string, string> = {};
+    for (const [key, value] of Object.entries(fields)) {
+      if (value && !user[key as keyof User]) {
+        data[key] = value;
+      }
+    }
+    if (Object.keys(data).length === 0) return user;
+    return prisma.user.update({ where: { id }, data });
+  },
 };

@@ -24,11 +24,15 @@ interface RequestOptions {
  * `ApiResponse<T>` envelope the backend returns.
  */
 export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  const isFormData = options.body instanceof FormData;
+
   const response = await fetch(`${env.apiUrl}${path}`, {
     method: options.method ?? "GET",
     credentials: "include",
-    headers: options.body ? { "Content-Type": "application/json" } : undefined,
-    body: options.body ? JSON.stringify(options.body) : undefined,
+    // Never set Content-Type for FormData -- the browser must set it
+    // (including the multipart boundary) itself.
+    headers: options.body && !isFormData ? { "Content-Type": "application/json" } : undefined,
+    body: options.body ? (isFormData ? (options.body as FormData) : JSON.stringify(options.body)) : undefined,
   });
 
   const payload = (await response.json().catch(() => null)) as ApiResponse<T> | null;

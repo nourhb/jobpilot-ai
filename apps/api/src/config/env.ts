@@ -28,6 +28,8 @@ const envSchema = z.object({
 
   STORAGE_PROVIDER: z.enum(["local", "s3"]).default("local"),
   STORAGE_BUCKET: z.string().optional(),
+  /** Only used by the "local" storage provider (see documents/storage.ts). */
+  STORAGE_DIR: z.string().default("./storage"),
 
   GREENHOUSE_ENABLED: z.coerce.boolean().default(false),
   LEVER_ENABLED: z.coerce.boolean().default(false),

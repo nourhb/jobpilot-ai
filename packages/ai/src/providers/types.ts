@@ -20,8 +20,14 @@ export interface AICompletionRequest {
 }
 
 export interface AIStructuredRequest<T> extends AICompletionRequest {
-  /** Zod schema the response MUST validate against. */
-  schema: z.ZodType<T>;
+  /**
+   * Zod schema the response MUST validate against. The `any` input
+   * parameter (rather than the default `Output`) is deliberate: schemas
+   * using `.default(...)` on nested fields legitimately have a narrower
+   * output type than input type, and callers only care that parsing
+   * *produces* a `T`, not what raw shape was accepted.
+   */
+  schema: z.ZodType<T, z.ZodTypeDef, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 }
 
 export interface AIUsage {

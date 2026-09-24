@@ -45,8 +45,13 @@ services:
       # localhost.
       DATABASE_URL: postgresql://${POSTGRES_USER:-jobpilot}:${POSTGRES_PASSWORD:-jobpilot}@postgres:5432/${POSTGRES_DB:-jobpilot}
       REDIS_URL: redis://redis:6379
+      # Phase 2: local-disk resume storage adapter. Bind-mounted below so
+      # uploaded resumes survive container restarts/rebuilds.
+      STORAGE_DIR: /app/storage
     ports:
       - "4000:4000"
+    volumes:
+      - resume_storage:/app/storage
     depends_on:
       postgres:
         condition: service_healthy
@@ -63,6 +68,9 @@ services:
       NODE_ENV: production
       DATABASE_URL: postgresql://${POSTGRES_USER:-jobpilot}:${POSTGRES_PASSWORD:-jobpilot}@postgres:5432/${POSTGRES_DB:-jobpilot}
       REDIS_URL: redis://redis:6379
+      STORAGE_DIR: /app/storage
+    volumes:
+      - resume_storage:/app/storage
     depends_on:
       postgres:
         condition: service_healthy
@@ -84,3 +92,4 @@ services:
 volumes:
   postgres_data:
   redis_data:
+  resume_storage:

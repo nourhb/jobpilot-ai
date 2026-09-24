@@ -1,12 +1,13 @@
 // JobPilot AI - Prisma schema
 //
-// PHASE 1 SCOPE: only the models required for authentication + audit
-// logging exist so far (User, AuditLog). Profile, Resume, WorkExperience,
-// Education, Skill, Certification, JobPreference, Job, JobSource,
-// JobMatch, Application, ApplicationAnswer, CoverLetter,
-// ApplicationEvent, Agent, AgentRun, Notification and Interview are added
-// incrementally in later phases (see docs/architecture.md, "Development
-// Phases") rather than generated up front against an empty feature set.
+// Grows incrementally, one phase at a time (see docs/architecture.md,
+// "Development Phases"), rather than being generated up front against an
+// empty feature set.
+//
+// PHASE 1: User, AuditLog (authentication).
+// PHASE 2: Profile, Resume, WorkExperience, Education, Skill,
+//          Certification (candidate truth layer -- see
+//          apps/api/src/profile/truthLayer.ts).
 
 generator client {
   provider = "prisma-client-js"
@@ -34,18 +35,22 @@ model User {
   updatedAt    DateTime @updatedAt
 
   auditLogs AuditLog[]
+  profile   Profile?
 
   @@map("users")
 }
 
 /// Grows as new phases introduce new audited events (JOB_DISCOVERED,
-/// APPLICATION_SUBMITTED, AGENT_STARTED, ...). Only auth-related values
-/// exist today.
+/// APPLICATION_SUBMITTED, AGENT_STARTED, ...).
 enum AuditAction {
   USER_REGISTERED
   USER_LOGIN
   USER_LOGIN_FAILED
   USER_LOGOUT
+  PROFILE_UPDATED
+  CV_UPLOADED
+  CV_PARSED
+  PROFILE_ITEM_VERIFIED
 }
 
 model AuditLog {
@@ -63,4 +68,169 @@ model AuditLog {
   @@index([userId])
   @@index([createdAt])
   @@map("audit_logs")
+}
+
+// ---------------------------------------------------------------------
+// PHASE 2: Profile, Resume, and the "truth layer" entities.
+//
+// Section 24 of the spec: only rows with `verified = true` may ever be
+// read by apps/api/src/profile/truthLayer.ts and fed into AI prompts.
+// Resume-parser output is inserted as `verified = false`; it becomes
+// eligible only after the user explicitly confirms it via
+// POST /api/profile/verify (see docs/architecture.md, "Truth Layer").
+// Manually-entered/edited items are marked `verified = true` immediately
+// because the user typed them directly.
+// ---------------------------------------------------------------------
+
+/// UI-facing options are NOT hard-coded across the frontend (section 7 /
+/// spec section "Profile") -- the canonical list lives once in
+/// packages/shared/src/constants/index.ts (WORK_AUTHORIZATION_STATUSES)
+/// and both the Zod schema and this enum are generated from that single
+/// source of intent. Prisma enums are still statically declared at the
+/// database level, which is an accepted trade-off.
+enum WorkAuthorizationStatus {
+  CANADIAN_CITIZEN
+  PERMANENT_RESIDENT
+  OPEN_WORK_PERMIT
+  CLOSED_WORK_PERMIT
+  STUDENT_PERMIT
+  REQUIRES_SPONSORSHIP
+  OTHER
+}
+
+enum RemotePreference {
+  REMOTE
+  HYBRID
+  ONSITE
+  ANY
+}
+
+enum ProfileItemSource {
+  MANUAL
+  RESUME_PARSER
+}
+
+model Profile {
+  id                   String                   @id @default(uuid())
+  userId               String                   @unique
+  user                 User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  professionalSummary  String?
+  yearsOfExperience    Float?
+  workAuthorization    WorkAuthorizationStatus?
+  requiresSponsorship  Boolean                  @default(false)
+  willingToRelocate    Boolean                  @default(false)
+  remotePreference     RemotePreference?
+  minimumSalary        Int?
+  maximumSalary        Int?
+  createdAt            DateTime                 @default(now())
+  updatedAt            DateTime                 @updatedAt
+
+  resumes         Resume[]
+  workExperiences WorkExperience[]
+  educations      Education[]
+  skills          Skill[]
+  certifications  Certification[]
+
+  @@map("profiles")
+}
+
+/// The original uploaded document is never overwritten (section 8) --
+/// every upload creates a new row/version; `isActive` marks the one
+/// currently used to seed truth-layer suggestions.
+model Resume {
+  id               String   @id @default(uuid())
+  profileId        String
+  profile          Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  originalFileName String
+  storageKey       String
+  mimeType         String
+  fileSize         Int
+  parsedText       String?
+  parsedJson       Json?
+  /// 0..1 completeness/confidence score computed by
+  /// apps/api/src/profile/resumeConfidence.ts. Below the review
+  /// threshold, `reviewRequired` is set and extracted rows stay
+  /// unverified until the user confirms them.
+  confidenceScore  Float?
+  reviewRequired   Boolean  @default(true)
+  version          Int
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+
+  @@index([profileId])
+  @@map("resumes")
+}
+
+model WorkExperience {
+  id          String    @id @default(uuid())
+  profileId   String
+  profile     Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  company     String
+  jobTitle    String
+  location    String?
+  startDate   DateTime
+  endDate     DateTime?
+  isCurrent   Boolean   @default(false)
+  description String?
+  source      ProfileItemSource @default(MANUAL)
+  verified    Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([profileId])
+  @@map("work_experiences")
+}
+
+model Education {
+  id          String    @id @default(uuid())
+  profileId   String
+  profile     Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  institution String
+  degree      String
+  field       String?
+  startDate   DateTime?
+  endDate     DateTime?
+  description String?
+  source      ProfileItemSource @default(MANUAL)
+  verified    Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([profileId])
+  @@map("educations")
+}
+
+model Skill {
+  id              String            @id @default(uuid())
+  profileId       String
+  profile         Profile           @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  name            String
+  category        String?
+  proficiency     String?
+  yearsExperience Float?
+  source          ProfileItemSource @default(MANUAL)
+  verified        Boolean           @default(false)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@unique([profileId, name])
+  @@index([profileId])
+  @@map("skills")
+}
+
+model Certification {
+  id         String            @id @default(uuid())
+  profileId  String
+  profile    Profile           @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  name       String
+  issuer     String?
+  issuedAt   DateTime?
+  expiresAt  DateTime?
+  source     ProfileItemSource @default(MANUAL)
+  verified   Boolean           @default(false)
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+
+  @@index([profileId])
+  @@map("certifications")
 }

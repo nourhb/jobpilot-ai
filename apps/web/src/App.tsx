@@ -6,6 +6,8 @@ import { PublicOnlyRoute } from "@/routes/PublicOnlyRoute";
 import { LoginPage } from "@/pages/LoginPage";
 import { RegisterPage } from "@/pages/RegisterPage";
 import { DashboardPage } from "@/pages/DashboardPage";
+import { ProfilePage } from "@/pages/ProfilePage";
+import { ResumePage } from "@/pages/ResumePage";
 import { ComingSoonPage } from "@/pages/ComingSoonPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 
@@ -30,8 +32,8 @@ export default function App() {
             element={<ComingSoonPage title="Applications" phase="Phase 6 — Application Engine" />}
           />
           <Route path="/agent" element={<ComingSoonPage title="Agent" phase="Phase 8 — Autonomous Agent" />} />
-          <Route path="/profile" element={<ComingSoonPage title="My Profile" phase="Phase 2 — Profile + CV" />} />
-          <Route path="/resume" element={<ComingSoonPage title="Resume" phase="Phase 2 — Profile + CV" />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/resume" element={<ResumePage />} />
           <Route
             path="/preferences"
             element={<ComingSoonPage title="Preferences" phase="Phase 4 — AI Matching" />}
