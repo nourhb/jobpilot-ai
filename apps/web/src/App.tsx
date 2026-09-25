@@ -11,6 +11,10 @@ import { ResumePage } from "@/pages/ResumePage";
 import { JobsPage } from "@/pages/JobsPage";
 import { JobDetailPage } from "@/pages/JobDetailPage";
 import { PreferencesPage } from "@/pages/PreferencesPage";
+import { ApplicationsPage } from "@/pages/ApplicationsPage";
+import { ApplicationDetailPage } from "@/pages/ApplicationDetailPage";
+import { AgentPage } from "@/pages/AgentPage";
+import { AnalyticsPage } from "@/pages/AnalyticsPage";
 import { ComingSoonPage } from "@/pages/ComingSoonPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 
@@ -31,18 +35,13 @@ export default function App() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/jobs" element={<JobsPage />} />
           <Route path="/jobs/:id" element={<JobDetailPage />} />
-          <Route
-            path="/applications"
-            element={<ComingSoonPage title="Applications" phase="Phase 6 — Application Engine" />}
-          />
-          <Route path="/agent" element={<ComingSoonPage title="Agent" phase="Phase 8 — Autonomous Agent" />} />
+          <Route path="/applications" element={<ApplicationsPage />} />
+          <Route path="/applications/:id" element={<ApplicationDetailPage />} />
+          <Route path="/agent" element={<AgentPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/resume" element={<ResumePage />} />
           <Route path="/preferences" element={<PreferencesPage />} />
-          <Route
-            path="/analytics"
-            element={<ComingSoonPage title="Analytics" phase="Phase 9 — Dashboard + Analytics" />}
-          />
+          <Route path="/analytics" element={<AnalyticsPage />} />
           <Route path="/settings" element={<ComingSoonPage title="Settings" phase="Phase 10 — Security" />} />
         </Route>
       </Route>

@@ -111,7 +111,7 @@ export const agentSchedulerService = {
    */
   async tick(queue: AgentQueue): Promise<TickResult> {
     const result: TickResult = { usersConsidered: 0, matchesEnqueued: 0, applicationsEnqueued: 0, applicationsSkipped: 0 };
-    const users = await jobPreferenceRepository.listAutoApplyEnabled();
+    const users = await jobPreferenceRepository.listRunnable();
     result.usersConsidered = users.length;
 
     for (const preferences of users) {

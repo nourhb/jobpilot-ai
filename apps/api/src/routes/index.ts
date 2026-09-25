@@ -6,6 +6,9 @@ import { jobsRouter } from "./jobs.routes";
 import { preferencesRouter } from "./preferences.routes";
 import { sourcesRouter } from "./sources.routes";
 import { applicationsRouter } from "./applications.routes";
+import { dashboardRouter } from "./dashboard.routes";
+import { agentRouter } from "./agent.routes";
+import { notificationsRouter } from "./notifications.routes";
 import { mockAtsRouter } from "../mockAts/mockAts.router";
 import { env } from "../config/env";
 
@@ -16,6 +19,9 @@ apiRouter.use("/profile", profileRouter);
 apiRouter.use("/jobs", jobsRouter);
 apiRouter.use("/preferences", preferencesRouter);
 apiRouter.use("/applications", applicationsRouter);
+apiRouter.use("/dashboard", dashboardRouter);
+apiRouter.use("/agent", agentRouter);
+apiRouter.use("/notifications", notificationsRouter);
 
 // Section 55: health/diagnostics endpoints are development-only.
 if (env.NODE_ENV !== "production") {

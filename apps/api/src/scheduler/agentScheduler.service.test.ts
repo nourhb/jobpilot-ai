@@ -5,6 +5,7 @@ vi.mock("../repositories/jobPreference.repository", () => ({
   jobPreferenceRepository: {
     getOrCreateForUser: vi.fn(),
     listAutoApplyEnabled: vi.fn(),
+    listRunnable: vi.fn(),
   },
 }));
 vi.mock("../repositories/job.repository", () => ({
@@ -143,7 +144,7 @@ describe("agentSchedulerService", () => {
       const { applicationRepository } = await import("../repositories/application.repository");
       const { agentSchedulerService } = await import("./agentScheduler.service");
 
-      vi.mocked(jobPreferenceRepository.listAutoApplyEnabled).mockResolvedValue([autoApplyPrefs] as never);
+      vi.mocked(jobPreferenceRepository.listRunnable).mockResolvedValue([autoApplyPrefs] as never);
       vi.mocked(jobRepository.listActiveIds).mockResolvedValue([{ id: "job-new" }, { id: "job-old" }] as never);
       vi.mocked(jobMatchRepository.listJobIdsForUser).mockResolvedValue([{ jobId: "job-old" }] as never);
       vi.mocked(jobMatchRepository.listApplyJobIdsForUser).mockResolvedValue([{ jobId: "job-old" }] as never);
@@ -161,7 +162,7 @@ describe("agentSchedulerService", () => {
     it("does nothing when no user has auto-apply enabled", async () => {
       const { jobPreferenceRepository } = await import("../repositories/jobPreference.repository");
       const { agentSchedulerService } = await import("./agentScheduler.service");
-      vi.mocked(jobPreferenceRepository.listAutoApplyEnabled).mockResolvedValue([]);
+      vi.mocked(jobPreferenceRepository.listRunnable).mockResolvedValue([]);
 
       const queue = fakeQueue();
       const result = await agentSchedulerService.tick(queue);

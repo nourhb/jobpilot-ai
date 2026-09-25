@@ -13,8 +13,13 @@ export const jobPreferenceRepository = {
     return prisma.jobPreference.update({ where: { userId }, data });
   },
 
-  /** Phase 8: AgentScheduler only auto-enqueues applications for users who opted in. */
+  /** Phase 8: users who opted into auto-apply. */
   listAutoApplyEnabled() {
     return prisma.jobPreference.findMany({ where: { autoApplyEnabled: true } });
+  },
+
+  /** Phase 9: scheduler only runs for opted-in users whose agent is RUNNING. */
+  listRunnable() {
+    return prisma.jobPreference.findMany({ where: { autoApplyEnabled: true, agentStatus: "RUNNING" } });
   },
 };

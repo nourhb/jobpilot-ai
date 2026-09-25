@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { JOB_EMPLOYMENT_TYPES, type JobEmploymentType, type JobPreferenceUpdateInput } from "@jobpilot/shared";
+import { JOB_EMPLOYMENT_TYPES, JOB_SOURCE_TYPES, type JobEmploymentType, type JobPreferenceUpdateInput, type JobSourceTypeName } from "@jobpilot/shared";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -43,6 +43,9 @@ interface FormState {
   autoApplyEnabled: boolean;
   autoCoverLetterEnabled: boolean;
   autoQuestionAnswerEnabled: boolean;
+  maxApplicationsPerDay: number;
+  maxApplicationsPerHour: number;
+  allowedSourceTypes: JobSourceTypeName[];
 }
 
 export function PreferencesPage() {
@@ -73,6 +76,9 @@ export function PreferencesPage() {
       autoApplyEnabled: preferences.autoApplyEnabled,
       autoCoverLetterEnabled: preferences.autoCoverLetterEnabled,
       autoQuestionAnswerEnabled: preferences.autoQuestionAnswerEnabled,
+      maxApplicationsPerDay: preferences.maxApplicationsPerDay,
+      maxApplicationsPerHour: preferences.maxApplicationsPerHour,
+      allowedSourceTypes: preferences.allowedSourceTypes as JobSourceTypeName[],
     });
   }, [preferences]);
 
@@ -113,6 +119,9 @@ export function PreferencesPage() {
       autoApplyEnabled: form.autoApplyEnabled,
       autoCoverLetterEnabled: form.autoCoverLetterEnabled,
       autoQuestionAnswerEnabled: form.autoQuestionAnswerEnabled,
+      maxApplicationsPerDay: form.maxApplicationsPerDay,
+      maxApplicationsPerHour: form.maxApplicationsPerHour,
+      allowedSourceTypes: form.allowedSourceTypes,
     };
 
     try {
@@ -276,6 +285,49 @@ export function PreferencesPage() {
               />
               Auto-answer application questions (Phase 5+)
             </label>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Maximum applications / day</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  value={form.maxApplicationsPerDay}
+                  onChange={(e) => setForm({ ...form, maxApplicationsPerDay: Number(e.target.value) })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Maximum applications / hour</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  value={form.maxApplicationsPerHour}
+                  onChange={(e) => setForm({ ...form, maxApplicationsPerHour: Number(e.target.value) })}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Allowed sources (leave all unchecked for every enabled source)</Label>
+              <div className="flex flex-wrap gap-4">
+                {JOB_SOURCE_TYPES.map((type) => (
+                  <label key={type} className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={form.allowedSourceTypes.includes(type)}
+                      onChange={() => {
+                        const has = form.allowedSourceTypes.includes(type);
+                        setForm({
+                          ...form,
+                          allowedSourceTypes: has
+                            ? form.allowedSourceTypes.filter((value) => value !== type)
+                            : [...form.allowedSourceTypes, type],
+                        });
+                      }}
+                    />
+                    {type}
+                  </label>
+                ))}
+              </div>
+            </div>
           </CardContent>
         </Card>
 

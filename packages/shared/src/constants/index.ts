@@ -176,3 +176,20 @@ export const QUESTION_CATEGORIES = [
   "HIGH_RISK",
 ] as const;
 export type QuestionCategory = (typeof QUESTION_CATEGORIES)[number];
+
+/** Phase 9 (section 48). Kept in sync with the Prisma `AgentStatus` enum. */
+export const AGENT_STATUSES = ["RUNNING", "PAUSED", "STOPPED", "ERROR"] as const;
+export type AgentStatus = (typeof AGENT_STATUSES)[number];
+
+/** Phase 9 (section 50). In-app notification types. */
+export const NOTIFICATION_TYPES = [
+  "APPLICATION_SUBMITTED",
+  "APPLICATION_FAILED",
+  "MANUAL_REVIEW_REQUIRED",
+  "INTERVIEW_DETECTED",
+  "JOB_REMOVED",
+  "AGENT_STOPPED",
+  "AI_PROVIDER_UNAVAILABLE",
+  "SOURCE_UNAVAILABLE",
+] as const;
+export type NotificationType = (typeof NOTIFICATION_TYPES)[number];

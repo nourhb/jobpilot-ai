@@ -44,6 +44,9 @@ vi.mock("@jobpilot/ai", () => ({
 vi.mock("./adapters/applicationRouter", () => ({
   resolveApplicationAdapter: vi.fn(),
 }));
+vi.mock("../notifications/notification.service", () => ({
+  notificationService: { notify: vi.fn() },
+}));
 
 const baseJob = {
   id: "job-1",

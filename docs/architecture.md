@@ -346,5 +346,26 @@ implemented so far:
     `idempotencyKey` / `@@unique([userId, jobId])` make every worker
     idempotent (section 41/42): a crash-and-retry cannot submit twice.
 
-Phases 9–11 (dashboard, production security/CI, Kubernetes) are
-intentionally not started yet.
+- **Phase 9 (done):** Dashboard, applications UI, agent controls,
+  analytics, and in-app notifications (sections 43-50).
+  - `GET /api/dashboard` reproduces section 43's overview cards from
+    persisted Job / JobMatch / Application counts -- never from the
+    LLM. `GET /api/dashboard/analytics` adds status/decision breakdowns
+    and a 7-day created-application series.
+  - Applications list/detail pages consume the Phase 6 routes, plus
+    `POST /api/applications/:id/mark-submitted` for section 46's
+    "Mark Submitted" after a human handles CAPTCHA / an unsupported
+    source. Manual-review reason, cover letter, answers, and timeline
+    are all shown from immutable snapshots / ApplicationEvent rows.
+  - Agent page (sections 47-49): START/PAUSE/STOP flips
+    `JobPreference.agentStatus`. The Phase 8 scheduler now requires
+    *both* `autoApplyEnabled` and `RUNNING`, so enabling auto-apply in
+    Preferences does not start the agent by itself. Logs are the
+    user's recent ApplicationEvent rows.
+  - Notifications (section 50) are in-app only (`local_only` -- no
+    email provider). The Application Engine emits SUBMITTED / FAILED /
+    MANUAL_REVIEW; Stop Agent emits AGENT_STOPPED. A notify failure
+    never fails the application pipeline.
+
+Phases 10–11 (production security/CI, Kubernetes) are intentionally
+not started yet.

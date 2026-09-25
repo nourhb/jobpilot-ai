@@ -48,6 +48,7 @@ model User {
   jobPreference  JobPreference?
   jobMatches     JobMatch[]
   applications   Application[]
+  notifications  Notification[]
 
   @@map("users")
 }
@@ -65,6 +66,10 @@ enum AuditAction {
   PROFILE_ITEM_VERIFIED
   JOB_DISCOVERY_RUN
   PREFERENCES_UPDATED
+  AGENT_STARTED
+  AGENT_PAUSED
+  AGENT_STOPPED
+  APPLICATION_SUBMITTED
 }
 
 model AuditLog {
@@ -464,10 +469,55 @@ model JobPreference {
   /// auto-apply until they explicitly configure this.
   allowedSourceTypes JobSourceType[] @default([])
 
+  /// Phase 9 (section 48): runtime control distinct from autoApplyEnabled.
+  /// The scheduler only enqueues work when this is RUNNING *and*
+  /// autoApplyEnabled is true. Default STOPPED so enabling auto-apply
+  /// in preferences does not start the agent until the user hits Start.
+  agentStatus AgentStatus @default(STOPPED)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@map("job_preferences")
+}
+
+enum AgentStatus {
+  RUNNING
+  PAUSED
+  STOPPED
+  ERROR
+}
+
+/// Phase 9 (section 50). In-app only -- no email/SMS provider in
+/// local_only scope. Created by the Application Engine / Agent control,
+/// never by the LLM.
+enum NotificationType {
+  APPLICATION_SUBMITTED
+  APPLICATION_FAILED
+  MANUAL_REVIEW_REQUIRED
+  INTERVIEW_DETECTED
+  JOB_REMOVED
+  AGENT_STOPPED
+  AI_PROVIDER_UNAVAILABLE
+  SOURCE_UNAVAILABLE
+}
+
+model Notification {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type    NotificationType
+  title   String
+  body    String
+  read    Boolean @default(false)
+  entityType String?
+  entityId   String?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, read])
+  @@map("notifications")
 }
 
 /// Section 28 system thresholds -- fixed, not user-configurable ("These

@@ -23,6 +23,10 @@ export interface JobPreferenceRecord {
   autoApplyEnabled: boolean;
   autoCoverLetterEnabled: boolean;
   autoQuestionAnswerEnabled: boolean;
+  maxApplicationsPerDay: number;
+  maxApplicationsPerHour: number;
+  allowedSourceTypes: string[];
+  agentStatus: string;
   createdAt: string;
   updatedAt: string;
 }

@@ -27,4 +27,9 @@ export const applicationsController = {
     const application = await applicationService.skip(requireUserId(req), req.params.id);
     res.status(200).json({ success: true, data: { application } });
   },
+
+  async markSubmitted(req: Request<{ id: string }>, res: Response): Promise<void> {
+    const application = await applicationService.markSubmitted(requireUserId(req), req.params.id);
+    res.status(200).json({ success: true, data: { application } });
+  },
 };

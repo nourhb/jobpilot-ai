@@ -19,6 +19,7 @@ import { validateApplication } from "./applicationValidator";
 import { evaluateApplication } from "./policyEngine";
 import { AppError } from "../middleware/errorHandler";
 import { logger } from "../lib/logger";
+import { notificationService } from "../notifications/notification.service";
 
 /** Section 42: `hash(userId + source + externalJobId)` -- must always reduce to the same value for the same (user, job) pair, independent of *when* it's computed. */
 function computeIdempotencyKey(userId: string, sourceType: string, externalId: string): string {
@@ -27,14 +28,47 @@ function computeIdempotencyKey(userId: string, sourceType: string, externalId: s
 
 const RETRYABLE_STATUSES: ReadonlySet<ApplicationStatus> = new Set(["MANUAL_REVIEW", "FAILED", "BLOCKED"]);
 
+async function notifyTerminalStatus(userId: string, applicationId: string, status: ApplicationStatus, message: string) {
+  if (status === "SUBMITTED") {
+    await notificationService.notify({
+      userId,
+      type: "APPLICATION_SUBMITTED",
+      title: "Application submitted",
+      body: message,
+      entityType: "Application",
+      entityId: applicationId,
+    });
+  } else if (status === "FAILED") {
+    await notificationService.notify({
+      userId,
+      type: "APPLICATION_FAILED",
+      title: "Application failed",
+      body: message,
+      entityType: "Application",
+      entityId: applicationId,
+    });
+  } else if (status === "MANUAL_REVIEW") {
+    await notificationService.notify({
+      userId,
+      type: "MANUAL_REVIEW_REQUIRED",
+      title: "Manual review required",
+      body: message,
+      entityType: "Application",
+      entityId: applicationId,
+    });
+  }
+}
+
 async function setStatus(
   applicationId: string,
   status: ApplicationStatus,
   message: string,
   extra: Partial<{ manualReviewReason: string | null; blockedReason: string | null; failureReason: string | null }> = {},
+  userId?: string,
 ) {
   await applicationRepository.updateStatus(applicationId, { status, ...extra });
   await applicationEventRepository.record(applicationId, status, message);
+  if (userId) await notifyTerminalStatus(userId, applicationId, status, message);
 }
 
 /**
@@ -115,7 +149,7 @@ export const applicationService = {
       jobPreferenceRepository.getOrCreateForUser(userId),
     ]);
 
-    await setStatus(application.id, "PREPARING", "Generating cover letter and application answers.");
+    await setStatus(application.id, "PREPARING", "Generating cover letter and application answers.", {}, userId);
 
     // matchedSkills isn't persisted on JobMatch -- recomputing the
     // (cheap, pure, deterministic) hybrid score here just to foreground
@@ -133,7 +167,7 @@ export const applicationService = {
     const adapter = resolveApplicationAdapter(job.source);
     if (!adapter) {
       const reason = "This job's source does not support automated submission yet.";
-      await setStatus(application.id, "MANUAL_REVIEW", reason, { manualReviewReason: reason });
+      await setStatus(application.id, "MANUAL_REVIEW", reason, { manualReviewReason: reason }, userId);
       return applicationRepository.findById(application.id);
     }
 
@@ -148,7 +182,7 @@ export const applicationService = {
     }
 
     if (!jobIsActive) {
-      await setStatus(application.id, "EXPIRED", "The job posting is no longer active at the source.");
+      await setStatus(application.id, "EXPIRED", "The job posting is no longer active at the source.", {}, userId);
       return applicationRepository.findById(application.id);
     }
 
@@ -157,7 +191,7 @@ export const applicationService = {
       questions = await adapter.getQuestions(job);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Could not retrieve the application form.";
-      await setStatus(application.id, "FAILED", message, { failureReason: message });
+      await setStatus(application.id, "FAILED", message, { failureReason: message }, userId);
       return applicationRepository.findById(application.id);
     }
 
@@ -171,7 +205,7 @@ export const applicationService = {
       answered.map((a) => ({ applicationId: application.id, questionText: a.questionText, result: a.result })),
     );
 
-    await setStatus(application.id, "VALIDATING", "Running application validation and policy checks.");
+    await setStatus(application.id, "VALIDATING", "Running application validation and policy checks.", {}, userId);
 
     const hasResume = (await profileService.listResumes(userId)).length > 0;
     const validation = validateApplication({
@@ -201,15 +235,15 @@ export const applicationService = {
       const combined = reasons.join("; ");
 
       if (policy.requiresManualReview || answered.some((a) => a.result.status === "BLOCKED")) {
-        await setStatus(application.id, "MANUAL_REVIEW", combined, { manualReviewReason: combined });
+        await setStatus(application.id, "MANUAL_REVIEW", combined, { manualReviewReason: combined }, userId);
       } else {
-        await setStatus(application.id, "BLOCKED", combined, { blockedReason: combined });
+        await setStatus(application.id, "BLOCKED", combined, { blockedReason: combined }, userId);
       }
       return applicationRepository.findById(application.id);
     }
 
-    await setStatus(application.id, "READY", "Passed validation and policy checks.");
-    await setStatus(application.id, "SUBMITTING", `Submitting via ${adapter.name}.`);
+    await setStatus(application.id, "READY", "Passed validation and policy checks.", {}, userId);
+    await setStatus(application.id, "SUBMITTING", `Submitting via ${adapter.name}.`, {}, userId);
 
     try {
       const submission = await adapter.submit(job, {
@@ -225,13 +259,14 @@ export const applicationService = {
         externalApplicationId: submission.externalApplicationId,
       });
       await applicationEventRepository.record(application.id, "SUBMITTED", `Submitted successfully via ${adapter.name}.`);
+      await notifyTerminalStatus(userId, application.id, "SUBMITTED", `Submitted successfully via ${adapter.name}.`);
     } catch (error) {
       if (error instanceof CaptchaDetectedError) {
         const reason = "CAPTCHA detected during submission.";
-        await setStatus(application.id, "MANUAL_REVIEW", reason, { manualReviewReason: reason });
+        await setStatus(application.id, "MANUAL_REVIEW", reason, { manualReviewReason: reason }, userId);
       } else {
         const message = error instanceof Error ? error.message : "Unknown submission error.";
-        await setStatus(application.id, "FAILED", message, { failureReason: message });
+        await setStatus(application.id, "FAILED", message, { failureReason: message }, userId);
       }
     }
 
@@ -254,6 +289,19 @@ export const applicationService = {
     await applicationEventRepository.record(application.id, "QUALIFIED", "Retrying application.");
 
     return this.process(userId, applicationId);
+  },
+
+  async markSubmitted(userId: string, applicationId: string) {
+    const application = await applicationRepository.findOwnedById(userId, applicationId);
+    if (!application) throw new AppError(404, "APPLICATION_NOT_FOUND", "Application not found.");
+    if (application.status !== "MANUAL_REVIEW") {
+      throw new AppError(409, "APPLICATION_NOT_MARKABLE", "Only a manual-review application can be marked as submitted.");
+    }
+
+    await applicationRepository.updateStatus(application.id, { status: "SUBMITTED", submittedAt: new Date() });
+    await applicationEventRepository.record(application.id, "SUBMITTED", "Marked submitted by the user after a manual review.");
+    await notifyTerminalStatus(userId, application.id, "SUBMITTED", "Marked submitted by the user after a manual review.");
+    return applicationRepository.findById(application.id);
   },
 
   async skip(userId: string, applicationId: string) {

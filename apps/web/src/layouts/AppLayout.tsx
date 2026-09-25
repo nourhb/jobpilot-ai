@@ -1,8 +1,10 @@
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { cn } from "cn";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/stores/authStore";
 import { useLogout } from "@/hooks/useAuth";
+import { useAgent } from "@/hooks/useAgent";
+import { useNotificationActions, useNotifications } from "@/hooks/useNotifications";
 
 const NAV_ITEMS = [
   { to: "/dashboard", label: "Dashboard" },
@@ -19,6 +21,11 @@ const NAV_ITEMS = [
 export function AppLayout() {
   const user = useAuthStore((state) => state.user);
   const logout = useLogout();
+  const navigate = useNavigate();
+  const { data: agent } = useAgent();
+  const { data: notifications } = useNotifications();
+  const notificationActions = useNotificationActions();
+  const unread = notifications?.unreadCount ?? 0;
 
   return (
     <div className="flex min-h-screen">
@@ -47,9 +54,48 @@ export function AppLayout() {
       <div className="flex flex-1 flex-col">
         <header className="flex items-center justify-between border-b bg-card px-6 py-3">
           <span className="rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
-            Agent: NOT CONFIGURED
+            Agent: {agent?.agentStatus ?? "STOPPED"}
           </span>
           <div className="flex items-center gap-3">
+            <details className="relative">
+              <summary className="cursor-pointer list-none rounded-full bg-muted px-3 py-1 text-xs font-medium">
+                Notifications{unread > 0 ? ` (${unread})` : ""}
+              </summary>
+              <div className="absolute right-0 z-10 mt-2 w-80 rounded-md border bg-card p-3 shadow">
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-xs font-medium">Recent</span>
+                  <button
+                    type="button"
+                    className="text-xs text-muted-foreground underline"
+                    onClick={() => notificationActions.markAllRead.mutate()}
+                  >
+                    Mark all read
+                  </button>
+                </div>
+                {(!notifications || notifications.items.length === 0) && (
+                  <p className="text-xs text-muted-foreground">No notifications.</p>
+                )}
+                <ul className="max-h-64 space-y-2 overflow-auto">
+                  {notifications?.items.slice(0, 8).map((item) => (
+                    <li key={item.id}>
+                      <button
+                        type="button"
+                        className={`w-full text-left text-xs ${item.read ? "text-muted-foreground" : "font-medium"}`}
+                        onClick={() => {
+                          if (!item.read) notificationActions.markRead.mutate(item.id);
+                          if (item.entityType === "Application" && item.entityId) {
+                            navigate(`/applications/${item.entityId}`);
+                          }
+                        }}
+                      >
+                        {item.title}
+                        <span className="mt-0.5 block font-normal text-muted-foreground">{item.body}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </details>
             {user && <span className="text-sm text-muted-foreground">{user.email}</span>}
             <Button
               variant="outline"
