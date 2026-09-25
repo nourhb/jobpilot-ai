@@ -8,6 +8,8 @@ export interface ApplicationJob {
   province: string | null;
   country: string | null;
   remoteType: string;
+  jobUrl?: string | null;
+  applicationUrl?: string | null;
 }
 
 export interface ApplicationListItem {

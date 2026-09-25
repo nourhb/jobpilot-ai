@@ -1,6 +1,7 @@
 import type {
   JobApplicationType,
   JobEmploymentType,
+  JobExperienceLevel,
   JobRemoteType,
   JobStatus,
   MatchCategory,
@@ -38,6 +39,7 @@ export interface JobRecord {
   status: JobStatus;
   createdAt: string;
   updatedAt: string;
+  source?: { name: string; type: string } | null;
 }
 
 export interface JobListResult {
@@ -51,7 +53,24 @@ export interface JobListQueryParams {
   search?: string;
   remoteType?: JobRemoteType;
   employmentType?: JobEmploymentType;
+  experienceLevel?: JobExperienceLevel;
   country?: string;
+}
+
+export interface JobMatchListItem {
+  job: JobRecord;
+  score: number;
+  matchCategory: MatchCategory;
+  decision: MatchDecision;
+  matchedSkills: string[];
+  skillsScore: number;
+  titleScore: number;
+}
+
+export interface JobMatchListResult {
+  profileReady: boolean;
+  scanned: number;
+  items: JobMatchListItem[];
 }
 
 export interface JobMatchRecord {
@@ -87,6 +106,7 @@ function buildQueryString(params: JobListQueryParams): string {
   if (params.search) search.set("search", params.search);
   if (params.remoteType) search.set("remoteType", params.remoteType);
   if (params.employmentType) search.set("employmentType", params.employmentType);
+  if (params.experienceLevel) search.set("experienceLevel", params.experienceLevel);
   if (params.country) search.set("country", params.country);
   const query = search.toString();
   return query ? `?${query}` : "";
@@ -103,5 +123,9 @@ export const jobsService = {
 
   getJobMatch(id: string) {
     return apiRequest<{ match: JobMatchRecord }>(`/api/jobs/${id}/match`);
+  },
+
+  listMatches() {
+    return apiRequest<JobMatchListResult>("/api/jobs/matches");
   },
 };

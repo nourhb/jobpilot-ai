@@ -30,4 +30,10 @@ export const educationRepository = {
     if (ids.length === 0) return Promise.resolve({ count: 0 });
     return prisma.education.updateMany({ where: { id: { in: ids }, profileId }, data: { verified: true } });
   },
+
+  deleteUnverifiedFromParser(profileId: string) {
+    return prisma.education.deleteMany({
+      where: { profileId, source: "RESUME_PARSER", verified: false },
+    });
+  },
 };

@@ -40,4 +40,10 @@ export const skillRepository = {
     if (ids.length === 0) return Promise.resolve({ count: 0 });
     return prisma.skill.updateMany({ where: { id: { in: ids }, profileId }, data: { verified: true } });
   },
+
+  deleteUnverifiedFromParser(profileId: string) {
+    return prisma.skill.deleteMany({
+      where: { profileId, source: "RESUME_PARSER", verified: false },
+    });
+  },
 };

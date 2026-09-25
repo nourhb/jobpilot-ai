@@ -1,5 +1,6 @@
 import type { NormalizedJob, RawJob } from "../base/types";
 import type { AshbyRawJobData } from "../adapters/ashby/ashby.types";
+import { inferExperienceLevel } from "./infer";
 
 function parseLocation(raw: string): NormalizedJob["location"] {
   if (!raw) return {};
@@ -31,6 +32,7 @@ export function normalizeAshbyJob(rawJob: RawJob): NormalizedJob {
     location: parseLocation(data.location),
     remoteType: data.isRemote ? "REMOTE" : data.location ? "ONSITE" : "UNKNOWN",
     employmentType: toEmploymentType(data.employmentType),
+    experienceLevel: inferExperienceLevel(data.title, data.descriptionPlain),
     jobUrl: data.jobUrl,
     application: { type: "API", url: data.applyUrl ?? data.jobUrl },
     postedAt: data.publishedAt,

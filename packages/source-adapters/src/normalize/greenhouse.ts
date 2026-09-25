@@ -1,5 +1,6 @@
 import type { NormalizedJob, RawJob } from "../base/types";
 import type { GreenhouseRawJobData } from "../adapters/greenhouse/greenhouse.types";
+import { inferEmploymentType, inferExperienceLevel, inferRemoteType } from "./infer";
 
 function stripHtml(html: string | undefined): string {
   if (!html) return "";
@@ -8,13 +9,6 @@ function stripHtml(html: string | undefined): string {
     .replace(/&nbsp;/g, " ")
     .replace(/\s+/g, " ")
     .trim();
-}
-
-function guessRemoteType(locationName: string): NormalizedJob["remoteType"] {
-  const lower = locationName.toLowerCase();
-  if (lower.includes("remote")) return "REMOTE";
-  if (lower.includes("hybrid")) return "HYBRID";
-  return locationName ? "ONSITE" : "UNKNOWN";
 }
 
 function parseLocation(raw: string): NormalizedJob["location"] {
@@ -36,8 +30,9 @@ export function normalizeGreenhouseJob(rawJob: RawJob): NormalizedJob {
     description: stripHtml(data.content),
     descriptionHtml: data.content,
     location: parseLocation(data.location?.name ?? ""),
-    remoteType: guessRemoteType(data.location?.name ?? ""),
-    employmentType: "UNKNOWN",
+    remoteType: inferRemoteType(data.location?.name ?? "", data.title),
+    employmentType: inferEmploymentType(data.title),
+    experienceLevel: inferExperienceLevel(data.title, stripHtml(data.content)),
     jobUrl: data.absolute_url,
     application: { type: "MANUAL", url: data.absolute_url },
     postedAt: data.updated_at,

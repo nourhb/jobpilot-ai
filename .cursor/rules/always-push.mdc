@@ -1,0 +1,14 @@
+---
+description: After any code change, commit and push to origin
+alwaysApply: true
+---
+
+# Always push after updates
+
+When you finish implementing or fixing something in this project:
+
+1. Stage the relevant files. Never stage `.env`, credentials, or uploaded documents.
+2. Create a git commit if there are changes.
+3. Push to `origin` on the current branch (`git push -u origin HEAD` if the branch has no upstream).
+
+Do this without being asked again. Do not force-push. Do not skip hooks.

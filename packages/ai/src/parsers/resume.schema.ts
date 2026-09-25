@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { WORK_AUTHORIZATION_STATUSES } from "@jobpilot/shared";
 
 /**
  * Mirrors `ResumeExtraction` from @jobpilot/shared. This is the schema
@@ -24,6 +25,8 @@ export const resumeExtractionSchema = z.object({
     portfolioUrl: z.string().optional(),
   }),
   summary: z.string().optional(),
+  workAuthorization: z.enum(WORK_AUTHORIZATION_STATUSES).optional(),
+  yearsOfExperience: z.number().min(0).max(60).optional(),
   skills: z
     .array(
       z.object({

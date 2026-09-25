@@ -18,6 +18,23 @@ import { logger } from "../lib/logger";
  * script, a test, or a future admin endpoint) must behave identically.
  */
 
+function toDate(value?: string): Date | null {
+  if (!value) return null;
+  const numeric = Number(value);
+  const date =
+    Number.isFinite(numeric) && /^\d+(\.\d+)?$/.test(value.trim())
+      ? new Date(numeric > 1e12 ? numeric : numeric * 1000)
+      : new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function toInt(value?: number): number | null {
+  if (value == null || !Number.isFinite(value)) return null;
+  const rounded = Math.round(value);
+  if (rounded > 2_147_483_647 || rounded < 0) return null;
+  return rounded;
+}
+
 function mapNormalizedJobToUpsertInput(normalized: NormalizedJob, sourceId: string, rawData: unknown) {
   return {
     sourceId,
@@ -33,15 +50,15 @@ function mapNormalizedJobToUpsertInput(normalized: NormalizedJob, sourceId: stri
     remoteType: normalized.remoteType,
     employmentType: normalized.employmentType,
     experienceLevel: normalized.experienceLevel ?? null,
-    salaryMin: normalized.salary?.min ?? null,
-    salaryMax: normalized.salary?.max ?? null,
+    salaryMin: toInt(normalized.salary?.min),
+    salaryMax: toInt(normalized.salary?.max),
     salaryCurrency: normalized.salary?.currency ?? null,
     salaryPeriod: normalized.salary?.period ?? null,
     jobUrl: normalized.jobUrl ?? null,
     applicationType: normalized.application.type,
     applicationUrl: normalized.application.url ?? null,
-    postedAt: normalized.postedAt ? new Date(normalized.postedAt) : null,
-    expiresAt: normalized.expiresAt ? new Date(normalized.expiresAt) : null,
+    postedAt: toDate(normalized.postedAt),
+    expiresAt: toDate(normalized.expiresAt),
     rawData: rawData as Prisma.InputJsonValue,
     contentHash: computeContentHash(normalized),
     secondaryDedupeKey: computeSecondaryDedupeKey(normalized),
@@ -111,6 +128,21 @@ export const jobDiscoveryService = {
     }
 
     return result;
+  },
+
+  async runForMatchingSources(filters: string[]): Promise<JobDiscoverySourceResult[]> {
+    const wanted = new Set(filters.map((value) => value.toUpperCase()));
+    const sources = (await jobSourceRepository.listEnabled()).filter(
+      (source) => wanted.has(source.type) || wanted.has(source.name.toUpperCase()) || filters.includes(source.name),
+    );
+    const results: JobDiscoverySourceResult[] = [];
+    for (const source of sources) {
+      results.push(await this.runForSource(source));
+    }
+    await auditService.log("JOB_DISCOVERY_RUN", {
+      metadata: { sources: results.map((r) => ({ sourceName: r.sourceName, fetched: r.fetched, stored: r.stored })) },
+    });
+    return results;
   },
 
   async runForAllEnabledSources(): Promise<JobDiscoverySourceResult[]> {

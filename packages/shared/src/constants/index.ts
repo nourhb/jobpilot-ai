@@ -95,6 +95,57 @@ export const JOB_EMPLOYMENT_TYPES = [
 ] as const;
 export type JobEmploymentType = (typeof JOB_EMPLOYMENT_TYPES)[number];
 
+export const JOB_EXPERIENCE_LEVELS = ["INTERNSHIP", "ENTRY", "MID", "SENIOR", "LEAD"] as const;
+export type JobExperienceLevel = (typeof JOB_EXPERIENCE_LEVELS)[number];
+
+export const JOB_EXPERIENCE_LABELS: Record<JobExperienceLevel, string> = {
+  INTERNSHIP: "Internship",
+  ENTRY: "Entry level",
+  MID: "Mid level",
+  SENIOR: "Senior",
+  LEAD: "Lead / Staff",
+};
+
+export const JOB_COUNTRY_FILTERS = [
+  "Canada",
+  "United States",
+  "United Kingdom",
+  "Germany",
+  "France",
+  "Netherlands",
+  "India",
+  "Remote",
+] as const;
+export type JobCountryFilter = (typeof JOB_COUNTRY_FILTERS)[number];
+
+/** Terms used by GET /api/jobs so title/location search matches the same way the UI labels do. */
+export const EMPLOYMENT_FILTER_TERMS: Record<Exclude<JobEmploymentType, "UNKNOWN">, string[]> = {
+  FULL_TIME: ["full-time", "full time", "permanent"],
+  PART_TIME: ["part-time", "part time"],
+  CONTRACT: ["contract", "contractor", "freelance"],
+  TEMPORARY: ["temporary", "temp "],
+  INTERNSHIP: ["intern", "internship", "co-op", "coop"],
+};
+
+export const EXPERIENCE_FILTER_TERMS: Record<JobExperienceLevel, string[]> = {
+  INTERNSHIP: ["intern", "internship", "co-op", "coop", "student"],
+  ENTRY: ["junior", "entry level", "entry-level", "new grad", "graduate", "jr."],
+  MID: ["mid-level", "mid level", "intermediate"],
+  SENIOR: ["senior", "sr.", "sr "],
+  LEAD: ["lead", "principal", "staff", "director", "head of"],
+};
+
+export const COUNTRY_FILTER_ALIASES: Record<JobCountryFilter, string[]> = {
+  Canada: ["canada", "canadian", "ontario", "quebec", "alberta", "british columbia", "toronto", "vancouver", "montreal", "ottawa", "calgary", "edmonton", "waterloo"],
+  "United States": ["united states", "usa", "u.s.", "america", "california", "new york", "texas", "washington", "remote, us"],
+  "United Kingdom": ["united kingdom", "uk", "england", "scotland", "london", "manchester", "dublin"],
+  Germany: ["germany", "deutschland", "berlin", "munich", "münchen", "hamburg", "frankfurt"],
+  France: ["france", "paris", "lyon", "remote, fr"],
+  Netherlands: ["netherlands", "amsterdam", "rotterdam", "eindhoven"],
+  India: ["india", "bangalore", "bengaluru", "hyderabad", "pune", "mumbai", "delhi"],
+  Remote: ["remote", "worldwide", "anywhere", "global"],
+};
+
 export const JOB_APPLICATION_TYPES = ["API", "PUBLIC_FORM", "MANUAL", "UNKNOWN"] as const;
 export type JobApplicationType = (typeof JOB_APPLICATION_TYPES)[number];
 

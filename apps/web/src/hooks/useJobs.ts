@@ -29,3 +29,10 @@ export function useJobMatch(id: string | undefined) {
     enabled: false,
   });
 }
+
+export function useRecommendedJobs() {
+  return useQuery({
+    queryKey: ["jobs", "matches"],
+    queryFn: () => jobsService.listMatches(),
+  });
+}

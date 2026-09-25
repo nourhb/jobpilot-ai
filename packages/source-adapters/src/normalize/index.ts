@@ -3,6 +3,7 @@ import { normalizeMockJob } from "./mock";
 import { normalizeGreenhouseJob } from "./greenhouse";
 import { normalizeLeverJob } from "./lever";
 import { normalizeAshbyJob } from "./ashby";
+import { normalizeCompanyJob } from "./company";
 
 /**
  * Spec section 19 (Job Normalization): every source returns a different
@@ -10,12 +11,8 @@ import { normalizeAshbyJob } from "./ashby";
  * RawJob into the common NormalizedJob shape the rest of the pipeline
  * (dedup, storage, matching) depends on.
  *
- * MOCK (Phase 3) and GREENHOUSE/LEVER/ASHBY (Phase 7) are implemented.
- * WORKABLE/COMPANY are intentionally still not implemented -- they were
- * never in this project's phased scope (the master prompt's real-adapter
- * phase names only Lever/Ashby/Greenhouse) -- added one `case` at a time
- * without touching this function's existing behavior for other sources
- * (Cursor rule: never replace working code unnecessarily).
+ * COMPANY maps public JSON job feeds (RemoteOK, Remotive, Arbeitnow,
+ * Jobicy, The Muse, Himalayas). WORKABLE remains unimplemented.
  */
 export function normalizeRawJob(sourceType: JobSourceTypeName, rawJob: RawJob): NormalizedJob {
   switch (sourceType) {
@@ -27,8 +24,9 @@ export function normalizeRawJob(sourceType: JobSourceTypeName, rawJob: RawJob): 
       return normalizeLeverJob(rawJob);
     case "ASHBY":
       return normalizeAshbyJob(rawJob);
-    case "WORKABLE":
     case "COMPANY":
+      return normalizeCompanyJob(rawJob);
+    case "WORKABLE":
       throw new Error(`Normalizer for source type "${sourceType}" is not implemented (out of project scope).`);
     default: {
       const exhaustiveCheck: never = sourceType;
@@ -37,4 +35,4 @@ export function normalizeRawJob(sourceType: JobSourceTypeName, rawJob: RawJob): 
   }
 }
 
-export { normalizeMockJob, normalizeGreenhouseJob, normalizeLeverJob, normalizeAshbyJob };
+export { normalizeMockJob, normalizeGreenhouseJob, normalizeLeverJob, normalizeAshbyJob, normalizeCompanyJob };

@@ -22,10 +22,10 @@ export interface ParsedResume {
  * so when it is the active provider we seed it with the offline
  * heuristic extraction (see resume.heuristic.ts) rather than letting it
  * return `{}` (which would fail schema validation for every upload).
- * This keeps mock behaviour honest: it is clearly a limited heuristic,
- * and the resulting (usually low) confidence score correctly drives
- * "CV REVIEW REQUIRED" for most real-world resumes -- the same
- * confidence-scoring code path a real provider's output goes through.
+ * This keeps mock behaviour honest: labelled Experience/Education
+ * blocks are extracted when present; anything not written stays empty.
+ * The same confidence-scoring path a real provider uses still drives
+ * "CV REVIEW REQUIRED" for thin or unstructured resumes.
  */
 export async function parseResume(provider: AIProvider, rawText: string): Promise<ParsedResume> {
   if (provider instanceof MockAIProvider) {

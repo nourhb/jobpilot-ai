@@ -9,6 +9,7 @@ import { DashboardPage } from "@/pages/DashboardPage";
 import { ProfilePage } from "@/pages/ProfilePage";
 import { ResumePage } from "@/pages/ResumePage";
 import { JobsPage } from "@/pages/JobsPage";
+import { MatchesPage } from "@/pages/MatchesPage";
 import { JobDetailPage } from "@/pages/JobDetailPage";
 import { PreferencesPage } from "@/pages/PreferencesPage";
 import { ApplicationsPage } from "@/pages/ApplicationsPage";
@@ -33,6 +34,7 @@ export default function App() {
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
           <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/matches" element={<MatchesPage />} />
           <Route path="/jobs" element={<JobsPage />} />
           <Route path="/jobs/:id" element={<JobDetailPage />} />
           <Route path="/applications" element={<ApplicationsPage />} />

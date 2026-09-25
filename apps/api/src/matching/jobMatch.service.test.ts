@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { VerifiedCandidateProfile } from "@jobpilot/shared";
 
 vi.mock("../repositories/job.repository", () => ({
-  jobRepository: { findById: vi.fn() },
+  jobRepository: { findById: vi.fn(), listByKeywords: vi.fn(), listRecentActive: vi.fn() },
 }));
 vi.mock("../repositories/jobPreference.repository", () => ({
   jobPreferenceRepository: { getOrCreateForUser: vi.fn() },
@@ -188,5 +188,78 @@ describe("jobMatchService.getOrComputeMatch", () => {
     expect(call.score).toBeGreaterThanOrEqual(70);
     expect(call.score).toBeLessThan(100);
     expect(call.decision).toBe("REVIEW");
+  });
+});
+
+describe("jobMatchService.rankJobsForUser", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+  });
+
+  it("returns an empty list when the verified CV has no skills or experience", async () => {
+    const { jobRepository } = await import("../repositories/job.repository");
+    const { jobPreferenceRepository } = await import("../repositories/jobPreference.repository");
+    const { profileService } = await import("../profile/profile.service");
+    const { interpretJobMatch } = await import("@jobpilot/ai");
+    const { jobMatchService } = await import("./jobMatch.service");
+
+    vi.mocked(profileService.getVerifiedCandidateProfile).mockResolvedValue({
+      ...baseProfile,
+      skills: [],
+      experience: [],
+    });
+    vi.mocked(jobPreferenceRepository.getOrCreateForUser).mockResolvedValue(basePreferences as never);
+
+    const result = await jobMatchService.rankJobsForUser("user-1");
+
+    expect(result).toEqual({ profileReady: false, scanned: 0, items: [] });
+    expect(jobRepository.listByKeywords).not.toHaveBeenCalled();
+    expect(interpretJobMatch).not.toHaveBeenCalled();
+  });
+
+  it("ranks keyword-matched jobs by hybrid score without calling the AI", async () => {
+    const { jobRepository } = await import("../repositories/job.repository");
+    const { jobPreferenceRepository } = await import("../repositories/jobPreference.repository");
+    const { profileService } = await import("../profile/profile.service");
+    const { interpretJobMatch } = await import("@jobpilot/ai");
+    const { jobMatchService } = await import("./jobMatch.service");
+
+    const strongJob = {
+      ...baseJob,
+      id: "job-strong",
+      title: "Kubernetes Platform Engineer",
+      description: "Build Kubernetes clusters and cloud infrastructure.",
+      country: "United States",
+      remoteType: "REMOTE",
+    };
+    const weakJob = {
+      ...baseJob,
+      id: "job-weak",
+      title: "Retail Associate",
+      description: "Greet customers and restock shelves.",
+      country: "Canada",
+    };
+    const expiredJob = {
+      ...baseJob,
+      id: "job-expired",
+      title: "Kubernetes Engineer",
+      description: "Kubernetes",
+      expiresAt: new Date("2020-01-01"),
+    };
+
+    vi.mocked(profileService.getVerifiedCandidateProfile).mockResolvedValue(baseProfile);
+    vi.mocked(jobPreferenceRepository.getOrCreateForUser).mockResolvedValue(basePreferences as never);
+    vi.mocked(jobRepository.listByKeywords).mockResolvedValue([strongJob, weakJob, expiredJob] as never);
+    vi.mocked(jobRepository.listRecentActive).mockResolvedValue([]);
+
+    const result = await jobMatchService.rankJobsForUser("user-1");
+
+    expect(interpretJobMatch).not.toHaveBeenCalled();
+    expect(jobRepository.listByKeywords).toHaveBeenCalledWith(expect.arrayContaining(["Kubernetes"]), 400);
+    expect(result.profileReady).toBe(true);
+    expect(result.scanned).toBe(3);
+    expect(result.items.map((item) => item.job.id)).toEqual(["job-strong"]);
+    expect(result.items[0]?.matchedSkills).toContain("Kubernetes");
+    expect(result.items[0]?.score).toBeGreaterThan(50);
   });
 });

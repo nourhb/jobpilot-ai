@@ -75,14 +75,37 @@ export interface CertificationRecord {
   verified: boolean;
 }
 
+export interface ResumeExtractionPreview {
+  personal?: {
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    city?: string;
+    country?: string;
+  };
+  summary?: string;
+  workAuthorization?: string;
+  yearsOfExperience?: number;
+  skills?: Array<{ name: string }>;
+  experience?: Array<{ company: string; jobTitle: string }>;
+  education?: Array<{ institution: string; degree: string }>;
+  certifications?: Array<{ name: string }>;
+}
+
 export interface ResumeRecord {
   id: string;
-  originalFilename: string;
+  originalFileName?: string;
+  originalFilename?: string;
   version: number;
   isActive: boolean;
   confidenceScore: number;
   reviewRequired: boolean;
   createdAt: string;
+  parsedJson?: ResumeExtractionPreview | null;
+}
+
+export function resumeFileName(resume: ResumeRecord): string {
+  return resume.originalFileName || resume.originalFilename || "Resume";
 }
 
 /** The API returns the Profile scalar fields alongside its relations, flattened. */

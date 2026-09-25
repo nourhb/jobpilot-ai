@@ -3,6 +3,7 @@ import { mockJobSourceAdapter } from "./adapters/mock.adapter";
 import { createGreenhouseAdapter } from "./adapters/greenhouse/greenhouse.adapter";
 import { createLeverAdapter } from "./adapters/lever/lever.adapter";
 import { createAshbyAdapter } from "./adapters/ashby/ashby.adapter";
+import { createPublicFeedsAdapter, type PublicFeedName } from "./adapters/publicFeeds/publicFeeds.adapter";
 
 /**
  * Spec section 15 (Adapter Registry): "If one source changes its API,
@@ -28,6 +29,7 @@ export class SourceAdapterRegistry {
     GREENHOUSE: (config) => createGreenhouseAdapter({ boardToken: String(config.boardToken ?? ""), companyName: config.companyName as string | undefined }),
     LEVER: (config) => createLeverAdapter({ company: String(config.company ?? ""), companyName: config.companyName as string | undefined }),
     ASHBY: (config) => createAshbyAdapter({ jobBoardName: String(config.jobBoardName ?? "") }),
+    COMPANY: (config) => createPublicFeedsAdapter({ feed: String(config.feed ?? "remoteok") as PublicFeedName }),
   };
 
   register(type: JobSourceTypeName, factory: AdapterFactory): void {

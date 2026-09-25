@@ -30,4 +30,10 @@ export const certificationRepository = {
     if (ids.length === 0) return Promise.resolve({ count: 0 });
     return prisma.certification.updateMany({ where: { id: { in: ids }, profileId }, data: { verified: true } });
   },
+
+  deleteUnverifiedFromParser(profileId: string) {
+    return prisma.certification.deleteMany({
+      where: { profileId, source: "RESUME_PARSER", verified: false },
+    });
+  },
 };

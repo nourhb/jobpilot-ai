@@ -10,3 +10,5 @@ export * from "./adapters/lever/lever.adapter";
 export * from "./adapters/lever/lever.types";
 export * from "./adapters/ashby/ashby.adapter";
 export * from "./adapters/ashby/ashby.types";
+export * from "./adapters/publicFeeds/publicFeeds.adapter";
+export * from "./normalize/company";

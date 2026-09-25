@@ -19,4 +19,9 @@ export const jobsController = {
     const match = await jobMatchService.getOrComputeMatch(requireUserId(req), req.params.id);
     res.status(200).json({ success: true, data: { match } });
   },
+
+  async listMatches(req: Request, res: Response): Promise<void> {
+    const result = await jobMatchService.rankJobsForUser(requireUserId(req));
+    res.status(200).json({ success: true, data: result });
+  },
 };

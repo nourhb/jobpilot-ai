@@ -3,8 +3,8 @@ import { Button } from "@/components/ui/button";
 
 export function NotFoundPage() {
   return (
-    <div className="flex h-screen flex-col items-center justify-center gap-4">
-      <h1 className="text-3xl font-semibold">404</h1>
+    <div className="flex h-screen flex-col items-center justify-center gap-4 bg-background">
+      <h1 className="text-5xl font-semibold">404</h1>
       <p className="text-muted-foreground">This page doesn&apos;t exist.</p>
       <Button asChild>
         <Link to="/">Go home</Link>

@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
+import { PageHeader } from "@/components/PageHeader";
 import {
   profileUpdateSchema,
   WORK_AUTHORIZATION_STATUSES,
@@ -39,9 +41,9 @@ import {
 } from "@/hooks/useProfile";
 
 const selectClassName =
-  "h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:bg-input/30";
+  "h-10 w-full rounded-md border bg-card px-3 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/30";
 const textareaClassName =
-  "w-full min-h-20 rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:bg-input/30";
+  "w-full min-h-20 rounded-md border bg-card px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/30";
 
 /** Badge showing whether a profile item is a confirmed fact or still awaiting user review. */
 function VerifiedBadge({ verified, source }: { verified: boolean; source: string }) {
@@ -77,15 +79,29 @@ export function ProfilePage() {
     unverifiedCertificationIds.length > 0;
 
   return (
-    <div className="max-w-3xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">My Profile</h1>
-        <p className="text-muted-foreground">
-          This is the single source of truth JobPilot uses when applying on your behalf. Only items marked
-          "Verified" are ever used to answer application questions — the AI never invents experience,
-          education, or credentials.
-        </p>
-      </div>
+    <div className="mx-auto max-w-3xl space-y-8">
+      <PageHeader
+        eyebrow="Truth layer"
+        title="My profile"
+        description="The only source of truth used when applying. Upload a resume to draft it — only verified items are used. The AI never invents credentials."
+        action={
+          <Link to="/resume" className="text-sm font-semibold text-primary underline">
+            Generate from a CV
+          </Link>
+        }
+      />
+
+      {!profile.workAuthorization && (
+        <Card className="border-amber-300 dark:border-amber-800">
+          <CardHeader>
+            <CardTitle>Work authorization is required to match jobs</CardTitle>
+            <CardDescription>
+              Matching skips every posting until this is set. Choose a status below, or upload a resume that
+              states it explicitly (the parser will not guess).
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      )}
 
       {hasUnverifiedItems && (
         <PendingVerificationCard
@@ -97,6 +113,12 @@ export function ProfilePage() {
       )}
 
       <ProfileSummaryCard
+        key={[
+          profile.professionalSummary,
+          profile.yearsOfExperience,
+          profile.workAuthorization,
+          profile.updatedAt,
+        ].join("|")}
         profile={{
           professionalSummary: profile.professionalSummary,
           yearsOfExperience: profile.yearsOfExperience,

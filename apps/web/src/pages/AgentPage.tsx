@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { PageHeader } from "@/components/PageHeader";
 import { useAgent, useAgentCommand, useAgentLogs } from "@/hooks/useAgent";
 
 export function AgentPage() {
@@ -11,21 +12,23 @@ export function AgentPage() {
   if (isLoading || !agent) return <p className="text-sm text-muted-foreground">Loading agent...</p>;
 
   return (
-    <div className="max-w-3xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Job search agent</h1>
-        <p className="text-muted-foreground">
-          Start / pause / stop only changes runtime status. Auto-apply, caps, and match threshold live in{" "}
-          <Link to="/preferences" className="underline">
-            Preferences
-          </Link>
-          .
-        </p>
-      </div>
+    <div className="mx-auto max-w-3xl space-y-8">
+      <PageHeader
+        eyebrow="Runtime"
+        title="Job search agent"
+        description="Start, pause, and stop only change runtime status. Caps and auto-apply live in Preferences."
+      />
+      <p className="-mt-4 text-sm text-muted-foreground">
+        Configure thresholds in{" "}
+        <Link to="/preferences" className="text-primary underline">
+          Preferences
+        </Link>
+        .
+      </p>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Status: {agent.agentStatus}</CardTitle>
+          <CardTitle className="text-xl">Status: {agent.agentStatus}</CardTitle>
           <CardDescription>
             Auto-apply {agent.autoApplyEnabled ? "enabled" : "disabled"} · min score {agent.minimumMatchScore} ·{" "}
             {agent.maxApplicationsPerDay}/day · {agent.maxApplicationsPerHour}/hour

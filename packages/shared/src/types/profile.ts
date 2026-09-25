@@ -86,6 +86,9 @@ export interface ResumeExtraction {
     portfolioUrl?: string;
   };
   summary?: string;
+  /** Only set when the resume states a specific Canadian status in so many words. */
+  workAuthorization?: WorkAuthorizationStatus;
+  yearsOfExperience?: number;
   skills: Array<{
     name: string;
     category?: string;

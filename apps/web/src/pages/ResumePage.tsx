@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ApiError } from "@/services/apiClient";
+import { PageHeader } from "@/components/PageHeader";
+import { resumeFileName, type ResumeExtractionPreview } from "@/services/profileService";
 import { useDeleteResume, useResumes, useUploadResume } from "@/hooks/useProfile";
 
 function formatConfidence(score: number): string {
@@ -28,15 +30,19 @@ export function ResumePage() {
   const activeResume = resumes?.find((r) => r.isActive);
 
   return (
-    <div className="max-w-3xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Resume</h1>
-        <p className="text-muted-foreground">
-          Upload a PDF or DOCX resume. JobPilot extracts your experience, education, skills, and
-          certifications automatically -- but nothing extracted is trusted until you review and confirm it
-          on the <Link to="/profile" className="font-medium text-primary hover:underline">Profile</Link> page.
-        </p>
-      </div>
+    <div className="mx-auto max-w-3xl space-y-8">
+      <PageHeader
+        eyebrow="Documents"
+        title="Resume"
+        description="Upload a PDF or DOCX. JobPilot drafts My Profile from what is written. Confirm extracted items before they can be used to apply."
+      />
+      <p className="-mt-4 text-sm text-muted-foreground">
+        Review on{" "}
+        <Link to="/profile" className="font-medium text-primary underline">
+          My Profile
+        </Link>
+        .
+      </p>
 
       <Card>
         <CardHeader>
@@ -83,12 +89,16 @@ export function ResumePage() {
             </p>
           )}
           {upload.isSuccess && (
-            <p className="mt-3 text-sm text-emerald-600">
-              Uploaded. Confidence {formatConfidence(upload.data.resume.confidenceScore)} —{" "}
-              {upload.data.resume.reviewRequired
-                ? "please review the extracted items on your Profile page."
-                : "extracted items are ready to review."}
-            </p>
+            <div className="mt-4 space-y-3 rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4">
+              <p className="text-sm text-emerald-700 dark:text-emerald-300">
+                Drafted your profile from this CV · confidence {formatConfidence(upload.data.resume.confidenceScore)}.
+                Confirm the items on My Profile before they can be used to apply.
+              </p>
+              <ExtractionSummary extraction={upload.data.resume.parsedJson} />
+              <Button asChild size="sm">
+                <Link to="/profile">Review and confirm on My Profile</Link>
+              </Button>
+            </div>
           )}
         </CardContent>
       </Card>
@@ -101,7 +111,7 @@ export function ResumePage() {
           <CardContent>
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-medium">{activeResume.originalFilename}</p>
+                <p className="font-medium">{resumeFileName(activeResume)}</p>
                 <p className="text-sm text-muted-foreground">
                   Version {activeResume.version} · Extraction confidence{" "}
                   {formatConfidence(activeResume.confidenceScore)}
@@ -129,7 +139,7 @@ export function ResumePage() {
             <div key={resume.id} className="flex items-center justify-between border-b pb-3 last:border-b-0 last:pb-0">
               <div>
                 <p className="font-medium">
-                  {resume.originalFilename}{" "}
+                  {resumeFileName(resume)}{" "}
                   {resume.isActive && (
                     <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
                       Active
@@ -154,5 +164,38 @@ export function ResumePage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+function ExtractionSummary({ extraction }: { extraction?: ResumeExtractionPreview | null }) {
+  if (!extraction) return null;
+
+  const rows = [
+    extraction.personal?.firstName || extraction.personal?.email
+      ? `Contact: ${[extraction.personal?.firstName, extraction.personal?.lastName].filter(Boolean).join(" ") || extraction.personal?.email}`
+      : null,
+    extraction.workAuthorization ? `Work authorization: ${extraction.workAuthorization.replace(/_/g, " ").toLowerCase()}` : null,
+    extraction.yearsOfExperience != null ? `${extraction.yearsOfExperience} years of experience` : null,
+    extraction.experience?.length ? `${extraction.experience.length} job${extraction.experience.length === 1 ? "" : "s"}` : null,
+    extraction.education?.length ? `${extraction.education.length} education ${extraction.education.length === 1 ? "entry" : "entries"}` : null,
+    extraction.skills?.length ? `${extraction.skills.length} skills` : null,
+    extraction.certifications?.length ? `${extraction.certifications.length} certification${extraction.certifications.length === 1 ? "" : "s"}` : null,
+    extraction.summary ? "Professional summary" : null,
+  ].filter(Boolean);
+
+  if (rows.length === 0) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        Little structured data was found. You can still add experience, education, and skills manually on My Profile.
+      </p>
+    );
+  }
+
+  return (
+    <ul className="list-inside list-disc text-sm text-muted-foreground">
+      {rows.map((row) => (
+        <li key={row}>{row}</li>
+      ))}
+    </ul>
   );
 }

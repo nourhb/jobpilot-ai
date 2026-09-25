@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { ApiError } from "@/services/apiClient";
+import { PageHeader } from "@/components/PageHeader";
 import { usePreferences, useUpdatePreferences } from "@/hooks/usePreferences";
 
 const EMPLOYMENT_TYPE_LABELS: Record<JobEmploymentType, string> = {
@@ -133,13 +134,12 @@ export function PreferencesPage() {
   }
 
   return (
-    <div className="max-w-2xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Job Preferences</h1>
-        <p className="text-muted-foreground">
-          Controls both the hard filters (jobs excluded outright) and the matching algorithm's weighting (section 12/26).
-        </p>
-      </div>
+    <div className="mx-auto max-w-2xl space-y-8">
+      <PageHeader
+        eyebrow="Controls"
+        title="Job preferences"
+        description="Hard filters exclude jobs outright. The remaining weights shape match scores — never the LLM."
+      />
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <Card>

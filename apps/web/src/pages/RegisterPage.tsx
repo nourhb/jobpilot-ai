@@ -27,7 +27,7 @@ export function RegisterPage() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Create your account</CardTitle>
+        <CardTitle className="text-2xl">Create your account</CardTitle>
         <CardDescription>
           Your profile is the source of truth — the AI never invents your experience.
         </CardDescription>

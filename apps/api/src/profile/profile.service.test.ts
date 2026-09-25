@@ -24,6 +24,7 @@ vi.mock("../repositories/workExperience.repository", () => ({
     delete: vi.fn(),
     findById: vi.fn(),
     verifyMany: vi.fn(),
+    deleteUnverifiedFromParser: vi.fn(),
   },
 }));
 vi.mock("../repositories/education.repository", () => ({
@@ -34,6 +35,7 @@ vi.mock("../repositories/education.repository", () => ({
     delete: vi.fn(),
     findById: vi.fn(),
     verifyMany: vi.fn(),
+    deleteUnverifiedFromParser: vi.fn(),
   },
 }));
 vi.mock("../repositories/skill.repository", () => ({
@@ -44,6 +46,7 @@ vi.mock("../repositories/skill.repository", () => ({
     delete: vi.fn(),
     findById: vi.fn(),
     verifyMany: vi.fn(),
+    deleteUnverifiedFromParser: vi.fn(),
   },
 }));
 vi.mock("../repositories/certification.repository", () => ({
@@ -54,6 +57,7 @@ vi.mock("../repositories/certification.repository", () => ({
     delete: vi.fn(),
     findById: vi.fn(),
     verifyMany: vi.fn(),
+    deleteUnverifiedFromParser: vi.fn(),
   },
 }));
 vi.mock("../repositories/user.repository", () => ({
@@ -285,6 +289,10 @@ describe("profileService", () => {
       vi.mocked(workExperienceRepository.createFromParser).mockResolvedValue(undefined as never);
       vi.mocked(educationRepository.createFromParser).mockResolvedValue(undefined as never);
       vi.mocked(certificationRepository.createFromParser).mockResolvedValue(undefined as never);
+      vi.mocked(workExperienceRepository.deleteUnverifiedFromParser).mockResolvedValue({ count: 0 } as never);
+      vi.mocked(educationRepository.deleteUnverifiedFromParser).mockResolvedValue({ count: 0 } as never);
+      vi.mocked(skillRepository.deleteUnverifiedFromParser).mockResolvedValue({ count: 0 } as never);
+      vi.mocked(certificationRepository.deleteUnverifiedFromParser).mockResolvedValue({ count: 0 } as never);
       vi.mocked(userRepository.updateContactIfEmpty).mockResolvedValue(undefined as never);
 
       const result = await profileService.uploadResume("user-1", {

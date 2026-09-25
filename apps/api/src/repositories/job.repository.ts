@@ -1,4 +1,12 @@
 import type { JobEmploymentType, JobSourceType, JobStatus, Prisma, RemoteType } from "@prisma/client";
+import {
+  COUNTRY_FILTER_ALIASES,
+  EMPLOYMENT_FILTER_TERMS,
+  EXPERIENCE_FILTER_TERMS,
+  type JobCountryFilter,
+  type JobEmploymentType as SharedEmploymentType,
+  type JobExperienceLevel,
+} from "@jobpilot/shared";
 import { prisma } from "../lib/prisma";
 
 export interface UpsertJobInput {
@@ -35,8 +43,18 @@ export interface JobListFilters {
   search?: string;
   remoteType?: RemoteType;
   employmentType?: JobEmploymentType;
+  experienceLevel?: JobExperienceLevel;
   country?: string;
   status?: JobStatus;
+}
+
+function containsAny(
+  fields: Array<"title" | "description" | "locationRaw" | "city" | "province" | "country" | "experienceLevel">,
+  terms: string[],
+): Prisma.JobWhereInput {
+  return {
+    OR: terms.flatMap((term) => fields.map((field) => ({ [field]: { contains: term, mode: "insensitive" } }))),
+  };
 }
 
 export const jobRepository = {
@@ -94,19 +112,49 @@ export const jobRepository = {
   },
 
   async list(filters: JobListFilters) {
+    const extra: Prisma.JobWhereInput[] = [];
+
+    if (filters.search) {
+      extra.push({
+        OR: [
+          { title: { contains: filters.search, mode: "insensitive" } },
+          { company: { contains: filters.search, mode: "insensitive" } },
+        ],
+      });
+    }
+
+    if (filters.remoteType && filters.remoteType !== "UNKNOWN") {
+      extra.push({
+        OR: [
+          { remoteType: filters.remoteType },
+          ...(filters.remoteType === "REMOTE" ? [{ locationRaw: { contains: "remote", mode: "insensitive" as const } }] : []),
+          ...(filters.remoteType === "HYBRID" ? [{ locationRaw: { contains: "hybrid", mode: "insensitive" as const } }] : []),
+        ],
+      });
+    }
+
+    if (filters.employmentType && filters.employmentType !== "UNKNOWN") {
+      const terms = EMPLOYMENT_FILTER_TERMS[filters.employmentType as Exclude<SharedEmploymentType, "UNKNOWN">] ?? [];
+      extra.push({
+        OR: [{ employmentType: filters.employmentType }, ...(terms.length ? [containsAny(["title", "description"], terms)] : [])],
+      });
+    }
+
+    if (filters.experienceLevel) {
+      const terms = EXPERIENCE_FILTER_TERMS[filters.experienceLevel] ?? [];
+      extra.push({
+        OR: [{ experienceLevel: { equals: filters.experienceLevel, mode: "insensitive" } }, containsAny(["title", "description", "experienceLevel"], terms)],
+      });
+    }
+
+    if (filters.country) {
+      const aliases = COUNTRY_FILTER_ALIASES[filters.country as JobCountryFilter] ?? [filters.country];
+      extra.push(containsAny(["country", "locationRaw", "city", "province"], aliases));
+    }
+
     const where: Prisma.JobWhereInput = {
       status: filters.status ?? "ACTIVE",
-      ...(filters.remoteType ? { remoteType: filters.remoteType } : {}),
-      ...(filters.employmentType ? { employmentType: filters.employmentType } : {}),
-      ...(filters.country ? { country: { equals: filters.country, mode: "insensitive" } } : {}),
-      ...(filters.search
-        ? {
-            OR: [
-              { title: { contains: filters.search, mode: "insensitive" } },
-              { company: { contains: filters.search, mode: "insensitive" } },
-            ],
-          }
-        : {}),
+      AND: extra,
     };
 
     const [items, total] = await Promise.all([
@@ -115,10 +163,45 @@ export const jobRepository = {
         orderBy: { postedAt: "desc" },
         skip: (filters.page - 1) * filters.pageSize,
         take: filters.pageSize,
+        include: { source: { select: { name: true, type: true } } },
       }),
       prisma.job.count({ where }),
     ]);
 
     return { items, total };
+  },
+
+  /**
+   * Candidate pool for CV ranking: active postings whose title or
+   * description mentions a verified skill or past job title.
+   */
+  listByKeywords(keywords: string[], take = 400) {
+    const terms = [...new Set(keywords.map((keyword) => keyword.trim()).filter((keyword) => keyword.length >= 2))].slice(
+      0,
+      16,
+    );
+    if (terms.length === 0) return Promise.resolve([]);
+
+    return prisma.job.findMany({
+      where: {
+        status: "ACTIVE",
+        OR: terms.flatMap((term) => [
+          { title: { contains: term, mode: "insensitive" as const } },
+          { description: { contains: term, mode: "insensitive" as const } },
+        ]),
+      },
+      take,
+      orderBy: { lastSeenAt: "desc" },
+      include: { source: { select: { name: true, type: true } } },
+    });
+  },
+
+  listRecentActive(take = 300) {
+    return prisma.job.findMany({
+      where: { status: "ACTIVE" },
+      take,
+      orderBy: { lastSeenAt: "desc" },
+      include: { source: { select: { name: true, type: true } } },
+    });
   },
 };

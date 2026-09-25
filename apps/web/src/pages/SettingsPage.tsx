@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { useAuthStore } from "@/stores/authStore";
 import { accountService } from "@/services/accountService";
 import { ApiError } from "@/services/apiClient";
+import { PageHeader } from "@/components/PageHeader";
 
 export function SettingsPage() {
   const user = useAuthStore((state) => state.user);
@@ -30,11 +31,12 @@ export function SettingsPage() {
   }
 
   return (
-    <div className="max-w-3xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
-        <p className="text-muted-foreground">Account security and data deletion. Secrets never leave the API.</p>
-      </div>
+    <div className="mx-auto max-w-3xl space-y-8">
+      <PageHeader
+        eyebrow="Account"
+        title="Settings"
+        description="Session security and data deletion. Secrets never leave the API."
+      />
 
       <Card>
         <CardHeader>

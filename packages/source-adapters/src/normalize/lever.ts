@@ -1,5 +1,6 @@
 import type { NormalizedJob, RawJob } from "../base/types";
 import type { LeverRawJobData } from "../adapters/lever/lever.types";
+import { inferExperienceLevel } from "./infer";
 
 function parseLocation(raw: string | undefined): NormalizedJob["location"] {
   if (!raw) return {};
@@ -44,6 +45,7 @@ export function normalizeLeverJob(rawJob: RawJob): NormalizedJob {
     location: parseLocation(data.categories.location),
     remoteType: toRemoteType(data.workplaceType),
     employmentType: toEmploymentType(data.categories.commitment),
+    experienceLevel: inferExperienceLevel(data.text, data.descriptionPlain),
     jobUrl: data.hostedUrl,
     application: { type: "API", url: data.applyUrl ?? data.hostedUrl },
     postedAt: new Date(data.createdAt).toISOString(),

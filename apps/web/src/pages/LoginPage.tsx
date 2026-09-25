@@ -31,8 +31,8 @@ export function LoginPage() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Log in</CardTitle>
-        <CardDescription>Access your JobPilot AI dashboard.</CardDescription>
+        <CardTitle className="text-2xl">Log in</CardTitle>
+        <CardDescription>Use your JobPilot account to continue.</CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>

@@ -1,7 +1,9 @@
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { ApplyButton, resolveApplyHref } from "@/components/ApplyButton";
+import { PageHeader } from "@/components/PageHeader";
 import { useJob, useJobMatch } from "@/hooks/useJobs";
 import type { JobMatchRecord } from "@/services/jobsService";
 
@@ -21,15 +23,30 @@ function ScoreRow({ label, value }: { label: string; value: number }) {
   );
 }
 
-function MatchResult({ match }: { match: JobMatchRecord }) {
+function MatchResult({ match, applyHref }: { match: JobMatchRecord; applyHref: string | null }) {
   if (match.skippedReason) {
+    const needsAuthorization = /work authorization/i.test(match.skippedReason);
     return (
       <Card className="border-amber-300">
         <CardHeader>
-          <CardTitle className="text-base">Not a match</CardTitle>
+          <CardTitle className="text-base">Not a match yet</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-3">
           <p className="text-sm text-muted-foreground">{match.skippedReason}</p>
+          <ApplyButton href={applyHref} />
+          {needsAuthorization && (
+            <p className="text-sm text-muted-foreground">
+              Matching will not invent your legal status. Set it on{" "}
+              <Link to="/profile" className="font-medium text-primary underline">
+                My Profile
+              </Link>{" "}
+              or upload a resume that states it (for example “Canadian citizen” or “Open work permit”) on{" "}
+              <Link to="/resume" className="font-medium text-primary underline">
+                Resume
+              </Link>
+              , then confirm the extracted items.
+            </p>
+          )}
         </CardContent>
       </Card>
     );
@@ -39,11 +56,14 @@ function MatchResult({ match }: { match: JobMatchRecord }) {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0">
         <CardTitle className="text-base">Match score</CardTitle>
-        <span
-          className={`rounded-full px-3 py-1 text-sm font-semibold ${MATCH_CATEGORY_STYLES[match.matchCategory] ?? ""}`}
-        >
-          {match.score} — {match.matchCategory}
-        </span>
+        <div className="flex items-center gap-2">
+          <span
+            className={`rounded-full px-3 py-1 text-sm font-semibold ${MATCH_CATEGORY_STYLES[match.matchCategory] ?? ""}`}
+          >
+            {match.score} — {match.matchCategory}
+          </span>
+          <ApplyButton href={applyHref} />
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid grid-cols-2 gap-x-8 gap-y-1">
@@ -59,12 +79,15 @@ function MatchResult({ match }: { match: JobMatchRecord }) {
 
         <Separator />
 
-        <p className="text-sm">
-          System decision: <span className="font-medium">{match.decision}</span>
-          {match.aiSuggestedDecision && (
-            <span className="text-muted-foreground"> (AI suggested: {match.aiSuggestedDecision})</span>
-          )}
-        </p>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm">
+            System decision: <span className="font-medium">{match.decision}</span>
+            {match.aiSuggestedDecision && (
+              <span className="text-muted-foreground"> (AI suggested: {match.aiSuggestedDecision})</span>
+            )}
+          </p>
+          <ApplyButton href={applyHref} />
+        </div>
 
         {match.reasons.length > 0 && (
           <div>
@@ -90,9 +113,50 @@ function MatchResult({ match }: { match: JobMatchRecord }) {
             </ul>
           </div>
         )}
+
+        <ApplyButton href={applyHref} size="default" />
       </CardContent>
     </Card>
   );
+}
+
+const EMAIL_RE = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+const IGNORE_EMAIL = /noreply|no-reply|donotreply|example\.com|sentry\.|wixpress|cloudfront|\.(png|jpg|gif|svg)$/i;
+
+function extractApplyEmails(text: string): string[] {
+  const decoded = text.includes("&lt;") || text.includes("&amp;")
+    ? text.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, "&")
+    : text;
+  const found = decoded.match(EMAIL_RE) ?? [];
+  return [...new Set(found.map((email) => email.toLowerCase()).filter((email) => !IGNORE_EMAIL.test(email)))];
+}
+
+function formatSalary(min: number | null, max: number | null, currency: string | null): string | null {
+  if (min === null && max === null) return null;
+  const range = min !== null && max !== null ? `${min.toLocaleString()}–${max.toLocaleString()}` : (min ?? max)!.toLocaleString();
+  return `${currency ?? "CAD"} ${range}`;
+}
+
+function readableDescription(html: string): string {
+  let text = html;
+  if (text.includes("&lt;")) {
+    text = text
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&amp;/g, "&");
+  }
+  return text
+    .replace(/<\/(p|div|h[1-6]|li|tr)>/gi, "\n")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<li[^>]*>/gi, "• ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .replace(/[ \t]{2,}/g, " ")
+    .trim();
 }
 
 export function JobDetailPage() {
@@ -104,27 +168,80 @@ export function JobDetailPage() {
     return <p className="text-sm text-muted-foreground">Loading job...</p>;
   }
 
+  const emails = extractApplyEmails(`${job.description}\n${job.descriptionHtml ?? ""}`);
+  const applyHref = resolveApplyHref({ ...job, emails });
+  const salary = formatSalary(job.salaryMin, job.salaryMax, job.salaryCurrency);
+  const location = [job.city, job.province, job.country].filter(Boolean).join(", ") || job.locationRaw;
+
   return (
-    <div className="max-w-3xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">{job.title}</h1>
-        <p className="text-muted-foreground">
-          {job.company}
-          {job.city ? ` · ${job.city}${job.province ? `, ${job.province}` : ""}` : ""}
-        </p>
-      </div>
+    <div className="mx-auto max-w-3xl space-y-8">
+      <PageHeader
+        title={job.title}
+        description={[job.company, job.city, job.province].filter(Boolean).join(" · ")}
+        action={<ApplyButton href={applyHref} size="default" />}
+      />
 
       <Card>
-        <CardContent className="whitespace-pre-wrap pt-6 text-sm">{job.description}</CardContent>
+        <CardHeader>
+          <CardTitle className="text-base">How to apply</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3 text-sm">
+          <p>
+            <span className="text-muted-foreground">Company</span>
+            <span className="ml-2 font-medium">{job.company}</span>
+          </p>
+          {location && (
+            <p>
+              <span className="text-muted-foreground">Location</span>
+              <span className="ml-2">{location}</span>
+            </p>
+          )}
+          {salary && (
+            <p>
+              <span className="text-muted-foreground">Salary</span>
+              <span className="ml-2">{salary}</span>
+            </p>
+          )}
+          {job.experienceLevel && (
+            <p>
+              <span className="text-muted-foreground">Experience</span>
+              <span className="ml-2">{job.experienceLevel}</span>
+            </p>
+          )}
+          {emails.length > 0 ? (
+            <div>
+              <p className="text-muted-foreground">Emails listed in this posting</p>
+              <ul className="mt-1 space-y-1">
+                {emails.map((email) => (
+                  <li key={email}>
+                    <a className="text-primary hover:underline" href={`mailto:${email}`}>
+                      {email}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <p className="text-muted-foreground">
+              No apply email was published in this posting. Use the company application form.
+            </p>
+          )}
+          <div className="flex flex-wrap gap-2 pt-1">
+            <ApplyButton href={applyHref} size="default" label={emails.length > 0 && !job.applicationUrl && !job.jobUrl ? "Email to apply" : "Apply"} />
+            <Button variant="outline" onClick={() => void refetch()} disabled={isFetching}>
+              {isFetching ? "Computing match..." : isFetched ? "Recompute match" : "Check my match"}
+            </Button>
+          </div>
+        </CardContent>
       </Card>
 
-      <div>
-        <Button onClick={() => void refetch()} disabled={isFetching}>
-          {isFetching ? "Computing match..." : isFetched ? "Recompute match" : "Check my match"}
-        </Button>
-      </div>
+      <Card>
+        <CardContent className="whitespace-pre-wrap pt-6 text-sm leading-6 text-foreground/90">
+          {readableDescription(job.descriptionHtml || job.description)}
+        </CardContent>
+      </Card>
 
-      {match && <MatchResult match={match} />}
+      {match && <MatchResult match={match} applyHref={applyHref} />}
     </div>
   );
 }

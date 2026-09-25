@@ -16,7 +16,10 @@ import { prisma } from "../lib/prisma";
 import { logger } from "../lib/logger";
 
 async function main() {
-  const results = await jobDiscoveryService.runForAllEnabledSources();
+  const filters = process.argv.slice(2);
+  const results = filters.length
+    ? await jobDiscoveryService.runForMatchingSources(filters)
+    : await jobDiscoveryService.runForAllEnabledSources();
 
   for (const result of results) {
     logger.info(result, `Discovery finished for source "${result.sourceName}"`);

@@ -115,6 +115,16 @@ export const profileService = {
       metadata: { confidence: parsed.confidence, reviewRequired: parsed.reviewRequired, promptVersion: parsed.promptVersion },
     });
 
+    // A re-upload should refresh the draft, not stack duplicate
+    // unverified parser rows on top of a previous weak extraction.
+    // User-confirmed / manually entered rows are never touched.
+    await Promise.all([
+      workExperienceRepository.deleteUnverifiedFromParser(profile.id),
+      educationRepository.deleteUnverifiedFromParser(profile.id),
+      skillRepository.deleteUnverifiedFromParser(profile.id),
+      certificationRepository.deleteUnverifiedFromParser(profile.id),
+    ]);
+
     // Seed unverified suggestions from the extraction -- never
     // auto-verified (section 24/82: the user must confirm before these
     // feed the truth layer).
@@ -122,7 +132,7 @@ export const profileService = {
       await skillRepository.createFromParserIfNew(profile.id, { name: skill.name, category: skill.category, yearsExperience: skill.yearsExperience });
     }
     for (const exp of parsed.data.experience) {
-      if (!exp.startDate) continue; // startDate is required by the schema/DB; skip unparseable entries rather than guessing one.
+      if (!exp.startDate || !exp.company || !exp.jobTitle) continue;
       await workExperienceRepository.createFromParser(profile.id, {
         company: exp.company,
         jobTitle: exp.jobTitle,
@@ -134,6 +144,7 @@ export const profileService = {
       });
     }
     for (const edu of parsed.data.education) {
+      if (!edu.institution || !edu.degree) continue;
       await educationRepository.createFromParser(profile.id, {
         institution: edu.institution,
         degree: edu.degree,
@@ -152,16 +163,40 @@ export const profileService = {
       });
     }
 
-    if (parsed.data.personal.city || parsed.data.personal.country) {
+    // Scalars on Profile (summary / years / work authorization) have no
+    // separate verify flag -- only fill blanks, never overwrite, and
+    // only take a legal status the resume stated explicitly.
+    const scalarUpdate: {
+      professionalSummary?: string;
+      yearsOfExperience?: number;
+      workAuthorization?: NonNullable<typeof parsed.data.workAuthorization>;
+    } = {};
+    if (!profile.professionalSummary && parsed.data.summary) {
+      scalarUpdate.professionalSummary = parsed.data.summary;
+    }
+    if (profile.yearsOfExperience == null && parsed.data.yearsOfExperience != null) {
+      scalarUpdate.yearsOfExperience = parsed.data.yearsOfExperience;
+    }
+    if (!profile.workAuthorization && parsed.data.workAuthorization) {
+      scalarUpdate.workAuthorization = parsed.data.workAuthorization;
+    }
+    if (Object.keys(scalarUpdate).length > 0) {
+      await profileRepository.updateScalars(profile.id, scalarUpdate);
+    }
+
+    const personal = parsed.data.personal;
+    if (personal.phone || personal.city || personal.province || personal.country || personal.linkedinUrl || personal.githubUrl || personal.portfolioUrl) {
       // Contact/location fields belong on User in this schema (Phase 1),
       // not Profile -- only fill them in if not already set, never
       // silently overwrite user-provided data.
       await userRepository.updateContactIfEmpty(userId, {
-        city: parsed.data.personal.city,
-        country: parsed.data.personal.country,
-        linkedinUrl: parsed.data.personal.linkedinUrl,
-        githubUrl: parsed.data.personal.githubUrl,
-        portfolioUrl: parsed.data.personal.portfolioUrl,
+        phone: personal.phone,
+        city: personal.city,
+        province: personal.province,
+        country: personal.country,
+        linkedinUrl: personal.linkedinUrl,
+        githubUrl: personal.githubUrl,
+        portfolioUrl: personal.portfolioUrl,
       });
     }
 

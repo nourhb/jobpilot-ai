@@ -10,6 +10,7 @@ export const jobService = {
       search: query.search,
       remoteType: query.remoteType,
       employmentType: query.employmentType,
+      experienceLevel: query.experienceLevel,
       country: query.country,
     });
 

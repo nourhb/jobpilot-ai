@@ -1,4 +1,5 @@
 import { Link, useParams } from "react-router-dom";
+import { ApplyButton, resolveApplyHref } from "@/components/ApplyButton";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -18,16 +19,24 @@ export function ApplicationDetailPage() {
   if (isError || !application) return <p className="text-sm text-destructive">Application not found.</p>;
 
   const job = application.jobSnapshot;
+  const applyHref = resolveApplyHref({
+    applicationUrl:
+      (typeof job.applicationUrl === "string" && job.applicationUrl) || application.job.applicationUrl || null,
+    jobUrl: application.job.jobUrl ?? null,
+  });
   const pending = actions.retry.isPending || actions.skip.isPending || actions.markSubmitted.isPending;
 
   return (
-    <div className="max-w-3xl space-y-6">
-      <div>
-        <Link to="/applications" className="text-sm text-muted-foreground hover:underline">
-          ← Applications
-        </Link>
-        <h1 className="mt-2 text-2xl font-semibold tracking-tight">{snapshotText(job, "title")}</h1>
-        <p className="text-muted-foreground">{snapshotText(job, "company")}</p>
+    <div className="mx-auto max-w-3xl space-y-8">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <Link to="/applications" className="text-sm text-primary hover:underline">
+            ← Applications
+          </Link>
+          <h1 className="page-title mt-3">{snapshotText(job, "title")}</h1>
+          <p className="page-lede mt-2">{snapshotText(job, "company")}</p>
+        </div>
+        <ApplyButton href={applyHref} size="default" />
       </div>
 
       {application.status === "MANUAL_REVIEW" && (

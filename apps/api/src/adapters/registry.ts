@@ -18,11 +18,11 @@ const REAL_SOURCE_ENABLED_FLAGS: Partial<Record<JobSourceTypeName, boolean>> = {
 };
 
 /**
- * API-side wiring around `packages/source-adapters`. MOCK (Phase 3) and
- * GREENHOUSE/LEVER/ASHBY (Phase 7) are wired up -- each real adapter's
- * own config (board token, company slug, job board name) comes from
- * `JobSource.config`, never from a hard-coded value. Workable/Company
- * remain unregistered (out of this project's scope).
+ * API-side wiring around `packages/source-adapters`. MOCK, Greenhouse,
+ * Lever, Ashby, and COMPANY public feeds are wired up -- each real
+ * adapter's own config comes from `JobSource.config`. Workable remains
+ * unregistered (out of this project's scope). COMPANY has no env kill
+ * switch because it only hits documented public JSON APIs.
  */
 export function getAdapterForSource(source: JobSource): JobSourceAdapter {
   const type = source.type as JobSourceTypeName;

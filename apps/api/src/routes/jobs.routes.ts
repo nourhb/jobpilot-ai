@@ -10,5 +10,6 @@ export const jobsRouter = Router();
 jobsRouter.use(requireAuth);
 
 jobsRouter.get("/", validateQuery(jobListQuerySchema), asyncHandler(jobsController.listJobs));
+jobsRouter.get("/matches", asyncHandler(jobsController.listMatches));
 jobsRouter.get("/:id", asyncHandler(jobsController.getJob));
 jobsRouter.get("/:id/match", asyncHandler(jobsController.getJobMatch));

@@ -18,6 +18,7 @@ describe("SourceAdapterRegistry", () => {
     expect(registry.isSupported("GREENHOUSE")).toBe(true);
     expect(registry.isSupported("LEVER")).toBe(true);
     expect(registry.isSupported("ASHBY")).toBe(true);
+    expect(registry.isSupported("COMPANY")).toBe(true);
   });
 
   it("creates real adapters with their per-source config", () => {

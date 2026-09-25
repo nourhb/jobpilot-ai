@@ -41,7 +41,7 @@ export const userRepository = {
    */
   async updateContactIfEmpty(
     id: string,
-    fields: Partial<Pick<User, "city" | "country" | "linkedinUrl" | "githubUrl" | "portfolioUrl">>,
+    fields: Partial<Pick<User, "phone" | "city" | "province" | "country" | "linkedinUrl" | "githubUrl" | "portfolioUrl">>,
   ): Promise<User> {
     const user = await prisma.user.findUniqueOrThrow({ where: { id } });
     const data: Record<string, string> = {};

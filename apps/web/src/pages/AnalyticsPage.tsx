@@ -1,4 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { PageHeader } from "@/components/PageHeader";
 import { useAnalytics } from "@/hooks/useDashboard";
 
 export function AnalyticsPage() {
@@ -8,11 +9,8 @@ export function AnalyticsPage() {
   if (isError || !data) return <p className="text-sm text-destructive">Could not load analytics.</p>;
 
   return (
-    <div className="max-w-3xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Analytics</h1>
-        <p className="text-muted-foreground">Counts only — no AI-generated metrics.</p>
-      </div>
+    <div className="mx-auto max-w-3xl space-y-8">
+      <PageHeader eyebrow="Signal" title="Analytics" description="Counts only — no AI-generated metrics." />
 
       <Card>
         <CardHeader>

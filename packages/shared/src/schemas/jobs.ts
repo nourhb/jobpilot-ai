@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { JOB_EMPLOYMENT_TYPES, JOB_REMOTE_TYPES } from "../constants";
+import { JOB_COUNTRY_FILTERS, JOB_EMPLOYMENT_TYPES, JOB_EXPERIENCE_LEVELS, JOB_REMOTE_TYPES } from "../constants";
 
 /**
  * GET /api/jobs query params. Shared between apps/web (form/filter state)
@@ -9,10 +9,11 @@ import { JOB_EMPLOYMENT_TYPES, JOB_REMOTE_TYPES } from "../constants";
  */
 export const jobListQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
-  pageSize: z.coerce.number().int().min(1).max(100).default(20),
+  pageSize: z.coerce.number().int().min(1).max(250).default(20),
   search: z.string().trim().max(200).optional(),
   remoteType: z.enum(JOB_REMOTE_TYPES).optional(),
   employmentType: z.enum(JOB_EMPLOYMENT_TYPES).optional(),
-  country: z.string().trim().max(100).optional(),
+  experienceLevel: z.enum(JOB_EXPERIENCE_LEVELS).optional(),
+  country: z.enum(JOB_COUNTRY_FILTERS).or(z.string().trim().max(100)).optional(),
 });
 export type JobListQuery = z.infer<typeof jobListQuerySchema>;
