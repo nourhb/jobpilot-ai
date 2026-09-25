@@ -26,7 +26,7 @@ function computeIdempotencyKey(userId: string, sourceType: string, externalId: s
   return createHash("sha256").update(`${userId}:${sourceType}:${externalId}`).digest("hex");
 }
 
-const RETRYABLE_STATUSES: ReadonlySet<ApplicationStatus> = new Set(["MANUAL_REVIEW", "FAILED", "BLOCKED"]);
+const RETRYABLE_STATUSES: ReadonlySet<ApplicationStatus> = new Set(["MANUAL_REVIEW", "FAILED", "BLOCKED", "SKIPPED"]);
 
 async function notifyTerminalStatus(userId: string, applicationId: string, status: ApplicationStatus, message: string) {
   if (status === "SUBMITTED") {
@@ -286,7 +286,11 @@ export const applicationService = {
       blockedReason: null,
       failureReason: null,
     });
-    await applicationEventRepository.record(application.id, "QUALIFIED", "Retrying application.");
+    await applicationEventRepository.record(
+      application.id,
+      "QUALIFIED",
+      application.status === "SKIPPED" ? "Unskipped by the user." : "Retrying application.",
+    );
 
     return this.process(userId, applicationId);
   },

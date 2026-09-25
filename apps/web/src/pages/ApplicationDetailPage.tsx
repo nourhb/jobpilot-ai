@@ -39,6 +39,22 @@ export function ApplicationDetailPage() {
         <ApplyButton href={applyHref} size="default" />
       </div>
 
+      {application.status === "SKIPPED" && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Skipped</CardTitle>
+            <CardDescription>
+              This application is on hold. Unskip to send it through the apply pipeline again.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button size="sm" disabled={pending} onClick={() => actions.retry.mutate()}>
+              {actions.retry.isPending ? "Unskipping..." : "Unskip"}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
       {application.status === "MANUAL_REVIEW" && (
         <Card className="border-amber-300">
           <CardHeader>

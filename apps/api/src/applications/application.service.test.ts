@@ -354,6 +354,25 @@ describe("applicationService.retry", () => {
     await expect(mods.applicationService.retry("user-1", "app-1")).rejects.toThrow(/cannot be retried/);
   });
 
+  it("unskips a SKIPPED application and re-runs the pipeline", async () => {
+    const mods = await importAll();
+    stubCommonDeps(mods);
+    vi.mocked(mods.applicationRepository.findOwnedById).mockResolvedValue({ ...baseApplication, status: "SKIPPED" } as never);
+    vi.mocked(mods.generateAnswerForQuestion).mockResolvedValue(answeredFact as never);
+    const fakeAdapter = {
+      name: "mock-ats",
+      isJobStillActive: vi.fn().mockResolvedValue(true),
+      getQuestions: vi.fn().mockResolvedValue([]),
+      submit: vi.fn().mockResolvedValue({ externalApplicationId: "mock-app-unskip" }),
+    };
+    vi.mocked(mods.resolveApplicationAdapter).mockReturnValue(fakeAdapter as never);
+
+    await mods.applicationService.retry("user-1", "app-1");
+
+    expect(mods.applicationEventRepository.record).toHaveBeenCalledWith("app-1", "QUALIFIED", "Unskipped by the user.");
+    expect(fakeAdapter.submit).toHaveBeenCalledTimes(1);
+  });
+
   it("resets status to QUALIFIED and re-runs the pipeline for a FAILED application", async () => {
     const mods = await importAll();
     stubCommonDeps(mods);
