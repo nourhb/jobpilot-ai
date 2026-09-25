@@ -33,4 +33,15 @@ describe("jobService", () => {
 
     await expect(jobService.getJobById("missing")).rejects.toBeInstanceOf(AppError);
   });
+
+  it("forwards field and domain filters to the repository", async () => {
+    const { jobRepository } = await import("../repositories/job.repository");
+    const { jobService } = await import("./job.service");
+
+    vi.mocked(jobRepository.list).mockResolvedValue({ items: [], total: 0 } as never);
+
+    await jobService.listJobs({ page: 1, pageSize: 20, field: "SOFTWARE", domain: "CLOUD" });
+
+    expect(jobRepository.list).toHaveBeenCalledWith(expect.objectContaining({ field: "SOFTWARE", domain: "CLOUD" }));
+  });
 });

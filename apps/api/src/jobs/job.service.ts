@@ -12,6 +12,8 @@ export const jobService = {
       employmentType: query.employmentType,
       experienceLevel: query.experienceLevel,
       country: query.country,
+      field: query.field,
+      domain: query.domain,
     });
 
     return {

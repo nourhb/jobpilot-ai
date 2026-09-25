@@ -135,6 +135,95 @@ export const EXPERIENCE_FILTER_TERMS: Record<JobExperienceLevel, string[]> = {
   LEAD: ["lead", "principal", "staff", "director", "head of"],
 };
 
+export const JOB_FIELDS = [
+  "SOFTWARE",
+  "DATA",
+  "INFRASTRUCTURE",
+  "PRODUCT",
+  "DESIGN",
+  "MARKETING",
+  "SALES",
+  "SUPPORT",
+  "FINANCE",
+  "PEOPLE",
+  "LEGAL",
+  "OPERATIONS",
+] as const;
+export type JobField = (typeof JOB_FIELDS)[number];
+
+export const JOB_FIELD_LABELS: Record<JobField, string> = {
+  SOFTWARE: "Software engineering",
+  DATA: "Data & ML",
+  INFRASTRUCTURE: "DevOps & infrastructure",
+  PRODUCT: "Product",
+  DESIGN: "Design",
+  MARKETING: "Marketing",
+  SALES: "Sales",
+  SUPPORT: "Customer & solutions",
+  FINANCE: "Finance",
+  PEOPLE: "People & HR",
+  LEGAL: "Legal",
+  OPERATIONS: "Operations",
+};
+
+export const JOB_FIELD_FILTER_TERMS: Record<JobField, string[]> = {
+  SOFTWARE: ["software engineer", "software developer", "backend", "frontend", "full stack", "full-stack", "fullstack"],
+  DATA: ["data engineer", "data scientist", "data analyst", "machine learning", "ml engineer", "analytics engineer"],
+  INFRASTRUCTURE: ["devops", "site reliability", "sre", "platform engineer", "infrastructure engineer", "cloud engineer"],
+  PRODUCT: ["product manager", "product owner", "product lead"],
+  DESIGN: ["product designer", "ux designer", "ui designer", "design engineer"],
+  MARKETING: ["marketing", "growth marketer", "content marketer", "brand manager"],
+  SALES: ["account executive", "sales representative", "sales manager", "business development", "sdr"],
+  SUPPORT: ["customer success", "customer support", "support engineer", "solutions engineer"],
+  FINANCE: ["accountant", "financial analyst", "controller", "fp&a"],
+  PEOPLE: ["recruiter", "human resources", "people partner", "talent acquisition"],
+  LEGAL: ["counsel", "attorney", "legal counsel", "compliance"],
+  OPERATIONS: ["operations manager", "program manager", "business operations", "chief of staff"],
+};
+
+export const JOB_DOMAINS = [
+  "CLOUD",
+  "FINTECH",
+  "HEALTHCARE",
+  "COMMERCE",
+  "MEDIA",
+  "SECURITY",
+  "GAMING",
+  "EDUCATION",
+  "ENERGY",
+  "AI",
+  "DEVTOOLS",
+] as const;
+export type JobDomain = (typeof JOB_DOMAINS)[number];
+
+export const JOB_DOMAIN_LABELS: Record<JobDomain, string> = {
+  CLOUD: "Cloud & SaaS",
+  FINTECH: "Fintech",
+  HEALTHCARE: "Healthcare",
+  COMMERCE: "E-commerce & retail",
+  MEDIA: "Media & ads",
+  SECURITY: "Security",
+  GAMING: "Gaming",
+  EDUCATION: "Education",
+  ENERGY: "Energy & climate",
+  AI: "AI",
+  DEVTOOLS: "Developer tools",
+};
+
+export const JOB_DOMAIN_FILTER_TERMS: Record<JobDomain, string[]> = {
+  CLOUD: ["saas", "cloud platform", "cloud infrastructure", "aws", "gcp", "azure"],
+  FINTECH: ["fintech", "payments", "banking", "crypto", "trading"],
+  HEALTHCARE: ["healthcare", "health tech", "medical", "biotech", "pharma", "hospital"],
+  COMMERCE: ["e-commerce", "ecommerce", "retail", "marketplace"],
+  MEDIA: ["advertising", "ad tech", "streaming", "media company"],
+  SECURITY: ["cybersecurity", "infosec", "security engineer", "application security"],
+  GAMING: ["game studio", "gameplay", "unity", "unreal", "gaming"],
+  EDUCATION: ["edtech", "education", "university", "learning platform"],
+  ENERGY: ["climate", "cleantech", "renewable", "energy"],
+  AI: ["artificial intelligence", "generative ai", "llm", "machine learning"],
+  DEVTOOLS: ["developer tools", "devtools", "observability", "ci/cd"],
+};
+
 export const COUNTRY_FILTER_ALIASES: Record<JobCountryFilter, string[]> = {
   Canada: ["canada", "canadian", "ontario", "quebec", "alberta", "british columbia", "toronto", "vancouver", "montreal", "ottawa", "calgary", "edmonton", "waterloo"],
   "United States": ["united states", "usa", "u.s.", "america", "california", "new york", "texas", "washington", "remote, us"],

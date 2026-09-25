@@ -1,7 +1,9 @@
 import type {
   JobApplicationType,
+  JobDomain,
   JobEmploymentType,
   JobExperienceLevel,
+  JobField,
   JobRemoteType,
   JobStatus,
   MatchCategory,
@@ -55,6 +57,8 @@ export interface JobListQueryParams {
   employmentType?: JobEmploymentType;
   experienceLevel?: JobExperienceLevel;
   country?: string;
+  field?: JobField;
+  domain?: JobDomain;
 }
 
 export interface JobMatchListItem {
@@ -108,6 +112,8 @@ function buildQueryString(params: JobListQueryParams): string {
   if (params.employmentType) search.set("employmentType", params.employmentType);
   if (params.experienceLevel) search.set("experienceLevel", params.experienceLevel);
   if (params.country) search.set("country", params.country);
+  if (params.field) search.set("field", params.field);
+  if (params.domain) search.set("domain", params.domain);
   const query = search.toString();
   return query ? `?${query}` : "";
 }

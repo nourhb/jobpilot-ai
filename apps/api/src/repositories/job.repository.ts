@@ -3,9 +3,13 @@ import {
   COUNTRY_FILTER_ALIASES,
   EMPLOYMENT_FILTER_TERMS,
   EXPERIENCE_FILTER_TERMS,
+  JOB_DOMAIN_FILTER_TERMS,
+  JOB_FIELD_FILTER_TERMS,
   type JobCountryFilter,
+  type JobDomain,
   type JobEmploymentType as SharedEmploymentType,
   type JobExperienceLevel,
+  type JobField,
 } from "@jobpilot/shared";
 import { prisma } from "../lib/prisma";
 
@@ -45,11 +49,13 @@ export interface JobListFilters {
   employmentType?: JobEmploymentType;
   experienceLevel?: JobExperienceLevel;
   country?: string;
+  field?: JobField;
+  domain?: JobDomain;
   status?: JobStatus;
 }
 
 function containsAny(
-  fields: Array<"title" | "description" | "locationRaw" | "city" | "province" | "country" | "experienceLevel">,
+  fields: Array<"title" | "description" | "company" | "locationRaw" | "city" | "province" | "country" | "experienceLevel">,
   terms: string[],
 ): Prisma.JobWhereInput {
   return {
@@ -150,6 +156,14 @@ export const jobRepository = {
     if (filters.country) {
       const aliases = COUNTRY_FILTER_ALIASES[filters.country as JobCountryFilter] ?? [filters.country];
       extra.push(containsAny(["country", "locationRaw", "city", "province"], aliases));
+    }
+
+    if (filters.field) {
+      extra.push(containsAny(["title"], JOB_FIELD_FILTER_TERMS[filters.field]));
+    }
+
+    if (filters.domain) {
+      extra.push(containsAny(["title", "company"], JOB_DOMAIN_FILTER_TERMS[filters.domain]));
     }
 
     const where: Prisma.JobWhereInput = {

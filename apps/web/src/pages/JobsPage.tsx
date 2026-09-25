@@ -2,12 +2,18 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import {
   JOB_COUNTRY_FILTERS,
+  JOB_DOMAIN_LABELS,
+  JOB_DOMAINS,
   JOB_EMPLOYMENT_TYPES,
   JOB_EXPERIENCE_LABELS,
   JOB_EXPERIENCE_LEVELS,
+  JOB_FIELD_LABELS,
+  JOB_FIELDS,
   JOB_REMOTE_TYPES,
+  type JobDomain,
   type JobEmploymentType,
   type JobExperienceLevel,
+  type JobField,
   type JobRemoteType,
 } from "@jobpilot/shared";
 import { Bookmark, Search } from "lucide-react";
@@ -123,6 +129,8 @@ export function JobsPage() {
   const [experienceLevel, setExperienceLevel] = useState<JobExperienceLevel | "">("");
   const [remoteType, setRemoteType] = useState<JobRemoteType | "">("");
   const [country, setCountry] = useState("");
+  const [field, setField] = useState<JobField | "">("");
+  const [domain, setDomain] = useState<JobDomain | "">("");
   const [tab, setTab] = useState<"postings" | "saved">("postings");
   const [savedIds, setSavedIds] = useState<string[]>(() => readSavedIds());
   const { data, isLoading, isError } = useJobs({
@@ -131,10 +139,12 @@ export function JobsPage() {
     experienceLevel: experienceLevel || undefined,
     remoteType: remoteType || undefined,
     country: country || undefined,
+    field: field || undefined,
+    domain: domain || undefined,
     page,
     pageSize: 100,
   });
-  const hasFilters = Boolean(employmentType || experienceLevel || remoteType || country);
+  const hasFilters = Boolean(employmentType || experienceLevel || remoteType || country || field || domain);
 
   useEffect(() => {
     const handle = window.setTimeout(() => {
@@ -146,7 +156,7 @@ export function JobsPage() {
 
   useEffect(() => {
     setPage(1);
-  }, [employmentType, experienceLevel, remoteType, country]);
+  }, [employmentType, experienceLevel, remoteType, country, field, domain]);
 
   useEffect(() => {
     localStorage.setItem(SAVED_JOBS_KEY, JSON.stringify(savedIds));
@@ -178,7 +188,7 @@ export function JobsPage() {
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
         <FilterSelect
           label="Work type"
           value={employmentType}
@@ -203,6 +213,18 @@ export function JobsPage() {
           onChange={setCountry}
           options={JOB_COUNTRY_FILTERS.map((value) => ({ value, label: value }))}
         />
+        <FilterSelect
+          label="Field"
+          value={field}
+          onChange={(value) => setField(value as JobField | "")}
+          options={JOB_FIELDS.map((value) => ({ value, label: JOB_FIELD_LABELS[value] }))}
+        />
+        <FilterSelect
+          label="Domain"
+          value={domain}
+          onChange={(value) => setDomain(value as JobDomain | "")}
+          options={JOB_DOMAINS.map((value) => ({ value, label: JOB_DOMAIN_LABELS[value] }))}
+        />
       </div>
       {hasFilters && (
         <button
@@ -212,6 +234,8 @@ export function JobsPage() {
             setExperienceLevel("");
             setRemoteType("");
             setCountry("");
+            setField("");
+            setDomain("");
           }}
           className="text-xs text-muted-foreground hover:text-foreground"
         >
