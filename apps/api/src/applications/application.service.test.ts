@@ -215,6 +215,30 @@ describe("applicationService.createAndProcess", () => {
     expect(mods.applicationRepository.create).not.toHaveBeenCalled();
   });
 
+  it("retries a failed application when the user forces apply again", async () => {
+    const mods = await importAll();
+    stubCommonDeps(mods);
+    const failed = { ...baseApplication, status: "FAILED" as const, failureReason: "Mock ATS returned 404" };
+    vi.mocked(mods.applicationRepository.findByUserAndJob).mockResolvedValue(failed as never);
+    vi.mocked(mods.applicationRepository.findOwnedById).mockResolvedValue(failed as never);
+    vi.mocked(mods.generateAnswerForQuestion).mockResolvedValue(answeredFact as never);
+    const fakeAdapter = {
+      name: "mock-ats",
+      isJobStillActive: vi.fn().mockResolvedValue(true),
+      getQuestions: vi.fn().mockResolvedValue([]),
+      submit: vi.fn().mockResolvedValue({ externalApplicationId: "mock-retry" }),
+    };
+    vi.mocked(mods.resolveApplicationAdapter).mockReturnValue(fakeAdapter as never);
+
+    await mods.applicationService.createAndProcess("user-1", "job-1", { force: true });
+
+    expect(mods.applicationRepository.create).not.toHaveBeenCalled();
+    expect(fakeAdapter.submit).toHaveBeenCalledTimes(1);
+    const statusCalls = vi.mocked(mods.applicationRepository.updateStatus).mock.calls.map((c) => c[1].status);
+    expect(statusCalls).toContain("QUALIFIED");
+    expect(statusCalls).toContain("SUBMITTED");
+  });
+
   it("refuses to create an application for a SKIP-decision match", async () => {
     const mods = await importAll();
     vi.mocked(mods.jobRepository.findByIdWithSource).mockResolvedValue(baseJob as never);

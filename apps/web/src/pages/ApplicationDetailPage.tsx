@@ -39,6 +39,22 @@ export function ApplicationDetailPage() {
         <ApplyButton href={applyHref} jobId={application.job.id} size="default" />
       </div>
 
+      {(application.status === "FAILED" || application.status === "BLOCKED") && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">{application.status === "FAILED" ? "Application failed" : "Application blocked"}</CardTitle>
+            <CardDescription>
+              {application.failureReason ?? application.blockedReason ?? "This attempt did not complete. Retry to send it through the pipeline again."}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button size="sm" disabled={pending} onClick={() => actions.retry.mutate()}>
+              {actions.retry.isPending ? "Retrying..." : "Retry apply"}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
       {application.status === "SKIPPED" && (
         <Card>
           <CardHeader>

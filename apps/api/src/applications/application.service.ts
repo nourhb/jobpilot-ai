@@ -94,9 +94,12 @@ export const applicationService = {
 
     const existing = await applicationRepository.findByUserAndJob(userId, jobId);
     if (existing) {
-      // Section 42 / RULE-006: idempotent by construction. Re-requesting
-      // an application for the same job never creates a second row --
-      // callers should use retry() to re-attempt a failed one.
+      // Same (user, job) never creates a second row. A user clicking
+      // Apply again on a failed/skipped attempt should retry, not land
+      // on the same dead page.
+      if (options.force && RETRYABLE_STATUSES.has(existing.status)) {
+        return this.retry(userId, existing.id);
+      }
       return applicationRepository.findById(existing.id);
     }
 

@@ -26,33 +26,27 @@ export function ApplyButton({
   label?: string;
 }) {
   const apply = useApplyToJob();
+  const canApply = Boolean(href || jobId);
 
-  if (href) {
-    return (
-      <Button asChild size={size}>
-        <a href={href} target="_blank" rel="noreferrer">
-          {label}
-        </a>
-      </Button>
-    );
-  }
-
-  if (jobId) {
-    return (
-      <Button
-        size={size}
-        disabled={apply.isPending}
-        onClick={() => apply.mutate(jobId)}
-        title="Start an application from your verified profile"
-      >
-        {apply.isPending ? "Applying..." : apply.isError ? "Retry apply" : label}
-      </Button>
-    );
+  function handleClick() {
+    if (href) {
+      window.open(href, "_blank", "noopener,noreferrer");
+    }
+    if (jobId) {
+      apply.mutate(jobId);
+    }
   }
 
   return (
-    <Button size={size} disabled title="This posting has no application link">
-      {label}
-    </Button>
+    <div className="flex flex-col items-end gap-1">
+      <Button size={size} disabled={!canApply || apply.isPending} onClick={handleClick}>
+        {apply.isPending ? "Applying..." : apply.isError ? "Retry apply" : label}
+      </Button>
+      {apply.isError && (
+        <p className="max-w-56 text-right text-xs text-destructive">
+          {apply.error instanceof Error ? apply.error.message : "Apply failed. Try again."}
+        </p>
+      )}
+    </div>
   );
 }

@@ -38,7 +38,8 @@ apiRouter.use("/notifications", notificationsRouter);
 if (env.NODE_ENV !== "production") {
   apiRouter.use("/health", healthRouter);
   apiRouter.use("/sources", sourcesRouter);
-  // Section 60: must never be reachable once real ATS adapters (Phase 7)
-  // exist -- this is a stand-in fake employer system, not a real one.
-  apiRouter.use("/_mock-ats", mockAtsRouter);
 }
+
+// Local Docker runs NODE_ENV=production but still uses MOCK jobs. The
+// mock ATS has to stay reachable or Apply dies with a 404 on the form.
+apiRouter.use("/_mock-ats", mockAtsRouter);

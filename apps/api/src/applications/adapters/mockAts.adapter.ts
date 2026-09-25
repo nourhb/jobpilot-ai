@@ -10,7 +10,7 @@ import {
 } from "./applicationAdapter.types";
 
 function baseUrl(): string {
-  return `${env.API_URL}/api/_mock-ats`;
+  return `http://127.0.0.1:${env.PORT}/api/_mock-ats`;
 }
 
 /**
