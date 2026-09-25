@@ -224,6 +224,27 @@ describe("applicationService.createAndProcess", () => {
     await expect(mods.applicationService.createAndProcess("user-1", "job-1")).rejects.toThrow(/skipped by matching/);
   });
 
+  it("creates an application for a SKIP match when the user forces apply", async () => {
+    const mods = await importAll();
+    stubCommonDeps(mods);
+    vi.mocked(mods.applicationRepository.findByUserAndJob).mockResolvedValue(null);
+    vi.mocked(mods.jobMatchService.getOrComputeMatch).mockResolvedValue({ decision: "SKIP", score: 20, matchCategory: "LOW" } as never);
+    vi.mocked(mods.applicationRepository.create).mockResolvedValue(baseApplication as never);
+    vi.mocked(mods.generateAnswerForQuestion).mockResolvedValue(answeredFact as never);
+    const fakeAdapter = {
+      name: "mock-ats",
+      isJobStillActive: vi.fn().mockResolvedValue(true),
+      getQuestions: vi.fn().mockResolvedValue([]),
+      submit: vi.fn().mockResolvedValue({ externalApplicationId: "mock-forced" }),
+    };
+    vi.mocked(mods.resolveApplicationAdapter).mockReturnValue(fakeAdapter as never);
+
+    await mods.applicationService.createAndProcess("user-1", "job-1", { force: true });
+
+    expect(mods.applicationRepository.create).toHaveBeenCalled();
+    expect(fakeAdapter.submit).toHaveBeenCalledTimes(1);
+  });
+
   it("runs the full pipeline through to SUBMITTED on the happy path", async () => {
     const mods = await importAll();
     stubCommonDeps(mods);

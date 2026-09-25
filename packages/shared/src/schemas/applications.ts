@@ -11,3 +11,8 @@ export const applicationListQuerySchema = z.object({
   status: z.enum(APPLICATION_STATUSES).optional(),
 });
 export type ApplicationListQuery = z.infer<typeof applicationListQuerySchema>;
+
+export const createApplicationSchema = z.object({
+  jobId: z.string().uuid(),
+});
+export type CreateApplicationInput = z.infer<typeof createApplicationSchema>;

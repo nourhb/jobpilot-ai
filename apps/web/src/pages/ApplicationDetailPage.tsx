@@ -36,7 +36,7 @@ export function ApplicationDetailPage() {
           <h1 className="page-title mt-3">{snapshotText(job, "title")}</h1>
           <p className="page-lede mt-2">{snapshotText(job, "company")}</p>
         </div>
-        <ApplyButton href={applyHref} size="default" />
+        <ApplyButton href={applyHref} jobId={application.job.id} size="default" />
       </div>
 
       {application.status === "SKIPPED" && (

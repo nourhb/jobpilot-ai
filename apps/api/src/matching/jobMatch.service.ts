@@ -10,6 +10,7 @@ import { AppError } from "../middleware/errorHandler";
 import { applyHardFilters, type HardFilterResult } from "./hardFilters";
 import { describesNoSponsorship } from "./sponsorshipSignal";
 import { computeHybridScore } from "./scoring";
+import { withApplyUrl } from "../jobs/applyUrl";
 
 const CANDIDATE_LIMIT = 400;
 const MAX_RESULTS = 60;
@@ -194,7 +195,7 @@ export const jobMatchService = {
       if (applyRecommendFilters(job, profile, preferences).skip) continue;
       const breakdown = computeHybridScore(job, profile, preferences);
       scored.push({
-        job,
+        job: withApplyUrl(job),
         score: breakdown.score,
         matchCategory: breakdown.matchCategory,
         decision: decideFromScore(breakdown.score, preferences.minimumMatchScore),

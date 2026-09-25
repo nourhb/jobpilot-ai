@@ -56,7 +56,7 @@ export function ApplicationsPage() {
                 </CardTitle>
                 <p className="text-sm text-muted-foreground">{application.job.company}</p>
               </div>
-              <ApplyButton href={resolveApplyHref(application.job)} />
+              <ApplyButton href={resolveApplyHref(application.job)} jobId={application.job.id} />
             </CardHeader>
             <CardContent className="flex flex-wrap gap-3 text-xs text-muted-foreground">
               <span>{application.job.city ?? application.job.remoteType}</span>

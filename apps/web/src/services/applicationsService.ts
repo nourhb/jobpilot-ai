@@ -62,6 +62,10 @@ export const applicationsService = {
     return apiRequest<{ application: ApplicationDetail }>(`/api/applications/${id}`);
   },
 
+  create(jobId: string) {
+    return apiRequest<{ application: ApplicationDetail }>("/api/applications", { method: "POST", body: { jobId } });
+  },
+
   retry(id: string) {
     return apiRequest<{ application: ApplicationDetail }>(`/api/applications/${id}/retry`, { method: "POST" });
   },

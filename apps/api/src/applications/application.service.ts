@@ -88,7 +88,7 @@ async function setStatus(
  * there is no code path from "AI output" directly to "submit".
  */
 export const applicationService = {
-  async createAndProcess(userId: string, jobId: string) {
+  async createAndProcess(userId: string, jobId: string, options: { force?: boolean } = {}) {
     const job = await jobRepository.findByIdWithSource(jobId);
     if (!job) throw new AppError(404, "JOB_NOT_FOUND", "Job not found.");
 
@@ -101,7 +101,7 @@ export const applicationService = {
     }
 
     const match = await jobMatchService.getOrComputeMatch(userId, jobId);
-    if (match.decision === "SKIP") {
+    if (match.decision === "SKIP" && !options.force) {
       throw new AppError(422, "MATCH_SKIPPED", "This job was skipped by matching and is not eligible for application.");
     }
 

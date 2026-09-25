@@ -23,7 +23,15 @@ function ScoreRow({ label, value }: { label: string; value: number }) {
   );
 }
 
-function MatchResult({ match, applyHref }: { match: JobMatchRecord; applyHref: string | null }) {
+function MatchResult({
+  match,
+  applyHref,
+  jobId,
+}: {
+  match: JobMatchRecord;
+  applyHref: string | null;
+  jobId: string;
+}) {
   if (match.skippedReason) {
     const needsAuthorization = /work authorization/i.test(match.skippedReason);
     return (
@@ -33,7 +41,7 @@ function MatchResult({ match, applyHref }: { match: JobMatchRecord; applyHref: s
         </CardHeader>
         <CardContent className="space-y-3">
           <p className="text-sm text-muted-foreground">{match.skippedReason}</p>
-          <ApplyButton href={applyHref} />
+          <ApplyButton href={applyHref} jobId={jobId} />
           {needsAuthorization && (
             <p className="text-sm text-muted-foreground">
               Matching will not invent your legal status. Set it on{" "}
@@ -62,7 +70,7 @@ function MatchResult({ match, applyHref }: { match: JobMatchRecord; applyHref: s
           >
             {match.score} — {match.matchCategory}
           </span>
-          <ApplyButton href={applyHref} />
+          <ApplyButton href={applyHref} jobId={jobId} />
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -86,7 +94,7 @@ function MatchResult({ match, applyHref }: { match: JobMatchRecord; applyHref: s
               <span className="text-muted-foreground"> (AI suggested: {match.aiSuggestedDecision})</span>
             )}
           </p>
-          <ApplyButton href={applyHref} />
+          <ApplyButton href={applyHref} jobId={jobId} />
         </div>
 
         {match.reasons.length > 0 && (
@@ -114,7 +122,7 @@ function MatchResult({ match, applyHref }: { match: JobMatchRecord; applyHref: s
           </div>
         )}
 
-        <ApplyButton href={applyHref} size="default" />
+        <ApplyButton href={applyHref} jobId={jobId} size="default" />
       </CardContent>
     </Card>
   );
@@ -178,7 +186,7 @@ export function JobDetailPage() {
       <PageHeader
         title={job.title}
         description={[job.company, job.city, job.province].filter(Boolean).join(" · ")}
-        action={<ApplyButton href={applyHref} size="default" />}
+        action={<ApplyButton href={applyHref} jobId={job.id} size="default" />}
       />
 
       <Card>
@@ -227,7 +235,12 @@ export function JobDetailPage() {
             </p>
           )}
           <div className="flex flex-wrap gap-2 pt-1">
-            <ApplyButton href={applyHref} size="default" label={emails.length > 0 && !job.applicationUrl && !job.jobUrl ? "Email to apply" : "Apply"} />
+            <ApplyButton
+              href={applyHref}
+              jobId={job.id}
+              size="default"
+              label={emails.length > 0 && !job.applicationUrl && !job.jobUrl ? "Email to apply" : "Apply"}
+            />
             <Button variant="outline" onClick={() => void refetch()} disabled={isFetching}>
               {isFetching ? "Computing match..." : isFetched ? "Recompute match" : "Check my match"}
             </Button>
@@ -241,7 +254,7 @@ export function JobDetailPage() {
         </CardContent>
       </Card>
 
-      {match && <MatchResult match={match} applyHref={applyHref} />}
+      {match && <MatchResult match={match} applyHref={applyHref} jobId={job.id} />}
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { applicationsService } from "@/services/applicationsService";
 
 const APPLICATIONS_KEY = ["applications"] as const;
@@ -15,6 +16,19 @@ export function useApplication(id: string | undefined) {
     queryKey: [...APPLICATIONS_KEY, "detail", id],
     queryFn: async () => (await applicationsService.getById(id!)).application,
     enabled: Boolean(id),
+  });
+}
+
+export function useApplyToJob() {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (jobId: string) => applicationsService.create(jobId),
+    onSuccess: (result) => {
+      void queryClient.invalidateQueries({ queryKey: APPLICATIONS_KEY });
+      navigate(`/applications/${result.application.id}`);
+    },
   });
 }
 

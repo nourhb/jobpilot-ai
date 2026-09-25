@@ -397,7 +397,7 @@ function JobResultRow({
             </p>
           </div>
           <div className="flex shrink-0 items-center gap-2">
-            <ApplyButton href={resolveApplyHref(job)} />
+            <ApplyButton href={resolveApplyHref(job)} jobId={job.id} />
             <IconButton label={saved ? "Unsave job" : "Save job"} pressed={saved} onClick={onToggleSaved}>
               <Bookmark className={saved ? "size-4 fill-current" : "size-4"} />
             </IconButton>

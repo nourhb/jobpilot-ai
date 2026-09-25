@@ -220,7 +220,7 @@ function MatchRow({
             )}
           </div>
           <div className="flex shrink-0 items-center gap-2">
-            <ApplyButton href={applyHref} />
+            <ApplyButton href={applyHref} jobId={job.id} />
             <button
               type="button"
               aria-label={saved ? "Unsave job" : "Save job"}

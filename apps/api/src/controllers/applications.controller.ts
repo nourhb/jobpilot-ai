@@ -4,6 +4,11 @@ import { applicationService } from "../applications/application.service";
 import { requireUserId } from "../utils/requireUserId";
 
 export const applicationsController = {
+  async createApplication(req: Request, res: Response): Promise<void> {
+    const application = await applicationService.createAndProcess(requireUserId(req), req.body.jobId, { force: true });
+    res.status(201).json({ success: true, data: { application } });
+  },
+
   async listApplications(req: Request<unknown, unknown, unknown, ApplicationListQuery>, res: Response): Promise<void> {
     const result = await applicationService.list(requireUserId(req), {
       status: req.query.status,

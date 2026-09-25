@@ -1,6 +1,7 @@
 import type { JobListQuery } from "@jobpilot/shared";
 import { jobRepository } from "../repositories/job.repository";
 import { AppError } from "../middleware/errorHandler";
+import { withApplyUrl } from "./applyUrl";
 
 export const jobService = {
   async listJobs(query: JobListQuery) {
@@ -17,7 +18,7 @@ export const jobService = {
     });
 
     return {
-      items,
+      items: items.map((job) => withApplyUrl(job)),
       pagination: { page: query.page, pageSize: query.pageSize, total, totalPages: Math.ceil(total / query.pageSize) },
     };
   },
@@ -25,6 +26,6 @@ export const jobService = {
   async getJobById(id: string) {
     const job = await jobRepository.findById(id);
     if (!job) throw new AppError(404, "JOB_NOT_FOUND", "Job not found.");
-    return job;
+    return withApplyUrl(job);
   },
 };
