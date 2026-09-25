@@ -216,6 +216,18 @@ export function JobDetailPage() {
               <span className="ml-2">{job.experienceLevel}</span>
             </p>
           )}
+          {applyHref ? (
+            <p>
+              <span className="text-muted-foreground">Company apply page</span>{" "}
+              <a href={applyHref} target="_blank" rel="noreferrer" className="break-all text-primary hover:underline">
+                {applyHref}
+              </a>
+            </p>
+          ) : (
+            <p className="text-muted-foreground">
+              This listing has no company apply link. Apply here in the app.
+            </p>
+          )}
           {emails.length > 0 ? (
             <div>
               <p className="text-muted-foreground">Emails listed in this posting</p>

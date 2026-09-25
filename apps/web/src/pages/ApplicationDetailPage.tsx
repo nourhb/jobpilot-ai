@@ -38,6 +38,18 @@ export function ApplicationDetailPage() {
         </div>
         <ApplyButton href={applyHref} jobId={application.job.id} size="default" />
       </div>
+      {applyHref ? (
+        <p className="text-sm">
+          Company apply page:{" "}
+          <a href={applyHref} target="_blank" rel="noreferrer" className="break-all text-primary hover:underline">
+            {applyHref}
+          </a>
+        </p>
+      ) : (
+        <p className="text-sm text-muted-foreground">
+          This listing has no company apply link. It is a sample job, so Apply runs inside JobPilot only.
+        </p>
+      )}
 
       {(application.status === "FAILED" || application.status === "BLOCKED") && (
         <Card>
@@ -103,6 +115,16 @@ export function ApplicationDetailPage() {
           <p>Salary max: {snapshotText(job, "salaryMax")}</p>
           <p>Match: {application.matchScore} ({application.matchCategory})</p>
           <p>Status: {application.status}</p>
+          <p className="col-span-2">
+            Apply link:{" "}
+            {applyHref ? (
+              <a href={applyHref} target="_blank" rel="noreferrer" className="break-all text-primary hover:underline">
+                {applyHref}
+              </a>
+            ) : (
+              "none"
+            )}
+          </p>
         </CardContent>
       </Card>
 
