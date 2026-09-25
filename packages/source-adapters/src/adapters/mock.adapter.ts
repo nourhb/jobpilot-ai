@@ -74,6 +74,7 @@ function toRawJob(data: MockRawJobData): RawJob {
 
 export const mockJobSourceAdapter: JobSourceAdapter = {
   sourceName: "mock",
+  rateLimit: { requestsPerMinute: 60, concurrency: 4 },
 
   async discoverJobs(): Promise<RawJob[]> {
     return FIXTURE_JOBS.map(toRawJob);

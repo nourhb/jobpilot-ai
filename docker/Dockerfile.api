@@ -1,24 +1,21 @@
 # JobPilot AI - API service
 #
-# Phase 1 note: runs via `tsx` rather than a compiled `dist/` bundle (see
-# apps/api/package.json). This keeps the monorepo's workspace packages
-# (packages/shared, packages/ai, packages/source-adapters) usable as raw
-# TS source without a cross-package bundling step. A leaner
-# esbuild/tsup-based production build can be introduced in a later phase
-# without changing this Dockerfile's shape. Installs the full workspace
-# for correctness/simplicity (see Dockerfile.web for the same tradeoff).
+# Runs via `tsx` against workspace TypeScript sources. Production
+# hardening (Phase 10): non-root user, writable storage dir, HEALTHCHECK
+# against the always-on liveness probe.
 FROM node:20-slim AS base
 WORKDIR /app
 RUN corepack enable
 COPY . .
 RUN pnpm install --frozen-lockfile
-# `prisma generate` only needs the schema to parse, not a live connection,
-# but it still validates that DATABASE_URL resolves to *something* — the
-# real value is supplied at runtime via env_file (docker-compose.yml).
 ENV DATABASE_URL="postgresql://placeholder:placeholder@localhost:5432/placeholder"
 RUN pnpm --filter api exec prisma generate --schema ../../prisma/schema.prisma
+RUN mkdir -p /app/storage && chown -R node:node /app /app/storage
 
 ENV NODE_ENV=production
 WORKDIR /app/apps/api
+USER node
 EXPOSE 4000
+HEALTHCHECK --interval=30s --timeout=5s --start-period=25s --retries=3 \
+  CMD node -e "fetch('http://127.0.0.1:4000/api/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 CMD ["pnpm", "run", "start"]

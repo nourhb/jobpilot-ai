@@ -46,20 +46,30 @@ Errors: `401 UNAUTHENTICATED`.
 Rate limiting: `/api/auth/register` and `/api/auth/login` are limited to
 20 requests / 15 minutes per IP (`TOO_MANY_REQUESTS`).
 
-## Health (development only — not mounted when `NODE_ENV=production`)
+## Health and metrics
 
-| Route | Checks |
-| --- | --- |
-| `GET /api/health` | Process liveness |
-| `GET /api/health/database` | `SELECT 1` against PostgreSQL |
-| `GET /api/health/redis` | Redis `PING` |
-| `GET /api/health/ai` | Configured `AIProvider.isHealthy()` |
+| Route | Availability | Checks |
+| --- | --- | --- |
+| `GET /api/health` | always | Process liveness |
+| `GET /api/ready` | always | PostgreSQL `SELECT 1` + Redis `PING` (no error details in production) |
+| `GET /api/metrics` | always | Prometheus text (`jobpilot_up`, `jobpilot_http_requests_total`) |
+| `GET /api/health/database` | development | `SELECT 1` against PostgreSQL |
+| `GET /api/health/redis` | development | Redis `PING` |
+| `GET /api/health/ai` | development | Configured `AIProvider.isHealthy()` |
 
-## Not implemented yet
+## Account
 
-Everything under `/api/profile`, `/api/preferences`, `/api/jobs`,
-`/api/applications`, `/api/agent` is defined in the project specification
-but arrives in later phases, once the corresponding Prisma models and
-services exist. Building the routes ahead of the data they operate on
-would mean either faking responses or leaving dead code — both against
-the project's development rules.
+### `DELETE /api/account`
+
+Requires authentication. Stops the agent, deletes on-disk resume files,
+writes `ACCOUNT_DELETED`, then deletes the user (cascaded rows). Clears
+the session cookie.
+
+Response `200`: `{ deleted: true }`.
+
+Errors: `401 UNAUTHENTICATED`, `403 CSRF_REJECTED` (cookie request from
+an unexpected Origin).
+
+Cookie-authenticated `POST`/`PUT`/`PATCH`/`DELETE` requests must send
+`Origin` matching `CORS_ORIGIN` or `APP_URL`. `Authorization: Bearer`
+clients skip the Origin check.

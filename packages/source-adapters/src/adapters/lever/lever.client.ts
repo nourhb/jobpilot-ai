@@ -1,3 +1,4 @@
+import { resilientFetch } from "../../http/resilientFetch";
 import type { LeverApplyForm, LeverPosting, LeverSubmitPayload, LeverSubmitResult } from "./lever.types";
 
 const BASE_URL = "https://api.lever.co/v0/postings";
@@ -8,7 +9,7 @@ const BASE_URL = "https://api.lever.co/v0/postings";
  * parameter for getting JSON instead of the hosted HTML page.
  */
 export async function fetchLeverPostings(company: string): Promise<LeverPosting[]> {
-  const response = await fetch(`${BASE_URL}/${encodeURIComponent(company)}?mode=json`);
+  const response = await resilientFetch(`${BASE_URL}/${encodeURIComponent(company)}?mode=json`);
   if (!response.ok) {
     throw new Error(`Lever postings API returned ${response.status} for company "${company}".`);
   }
@@ -16,7 +17,7 @@ export async function fetchLeverPostings(company: string): Promise<LeverPosting[
 }
 
 export async function fetchLeverPosting(company: string, postingId: string): Promise<LeverPosting> {
-  const response = await fetch(`${BASE_URL}/${encodeURIComponent(company)}/${encodeURIComponent(postingId)}?mode=json`);
+  const response = await resilientFetch(`${BASE_URL}/${encodeURIComponent(company)}/${encodeURIComponent(postingId)}?mode=json`);
   if (!response.ok) {
     throw new Error(`Lever postings API returned ${response.status} for posting "${postingId}".`);
   }
@@ -25,7 +26,7 @@ export async function fetchLeverPosting(company: string, postingId: string): Pro
 
 /** Spec section 17's cited `GET /postings/:posting/apply` -- application questions for a posting. */
 export async function fetchLeverApplyForm(company: string, postingId: string): Promise<LeverApplyForm> {
-  const response = await fetch(`${BASE_URL}/${encodeURIComponent(company)}/${encodeURIComponent(postingId)}/apply?mode=json`);
+  const response = await resilientFetch(`${BASE_URL}/${encodeURIComponent(company)}/${encodeURIComponent(postingId)}/apply?mode=json`);
   if (!response.ok) {
     throw new Error(`Lever apply-form API returned ${response.status} for posting "${postingId}".`);
   }
@@ -41,7 +42,7 @@ export async function fetchLeverApplyForm(company: string, postingId: string): P
  * bypass CAPTCHA or anti-bot systems" rule.
  */
 export async function submitLeverApplication(company: string, postingId: string, payload: LeverSubmitPayload): Promise<LeverSubmitResult> {
-  const response = await fetch(`${BASE_URL}/${encodeURIComponent(company)}/${encodeURIComponent(postingId)}/apply`, {
+  const response = await resilientFetch(`${BASE_URL}/${encodeURIComponent(company)}/${encodeURIComponent(postingId)}/apply`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),

@@ -15,7 +15,7 @@ import { ApplicationsPage } from "@/pages/ApplicationsPage";
 import { ApplicationDetailPage } from "@/pages/ApplicationDetailPage";
 import { AgentPage } from "@/pages/AgentPage";
 import { AnalyticsPage } from "@/pages/AnalyticsPage";
-import { ComingSoonPage } from "@/pages/ComingSoonPage";
+import { SettingsPage } from "@/pages/SettingsPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 
 export default function App() {
@@ -42,7 +42,7 @@ export default function App() {
           <Route path="/resume" element={<ResumePage />} />
           <Route path="/preferences" element={<PreferencesPage />} />
           <Route path="/analytics" element={<AnalyticsPage />} />
-          <Route path="/settings" element={<ComingSoonPage title="Settings" phase="Phase 10 — Security" />} />
+          <Route path="/settings" element={<SettingsPage />} />
         </Route>
       </Route>
 

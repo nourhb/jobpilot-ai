@@ -58,6 +58,7 @@ function toFormField(question: GreenhouseQuestion): ApplicationFormField {
 export function createGreenhouseAdapter(config: GreenhouseAdapterConfig): JobSourceAdapter {
   return {
     sourceName: `greenhouse:${config.boardToken}`,
+    rateLimit: { requestsPerMinute: 30, concurrency: 2 },
 
     async discoverJobs(): Promise<RawJob[]> {
       const { jobs } = await fetchGreenhouseJobs(config.boardToken);

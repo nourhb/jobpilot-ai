@@ -1,4 +1,4 @@
-# Deployment (Phase 1: local Docker Compose)
+# Deployment (Phases 1 / 10 / 11 — local only)
 
 ## Local development (no Docker)
 
@@ -15,7 +15,9 @@ pnpm dev              # runs apps/web + apps/api in parallel
 
 - Web: http://localhost:5173
 - API: http://localhost:4000
-- Health checks: http://localhost:4000/api/health(/database|/redis|/ai)
+- Health: http://localhost:4000/api/health (liveness) and `/api/ready`
+- Dev-only probes: `/api/health/database`, `/api/health/redis`, `/api/health/ai`
+- Metrics: http://localhost:4000/api/metrics
 
 ## Full stack via Docker Compose
 
@@ -73,9 +75,44 @@ SQL table names (e.g. `model users` / `model audit_logs` with no
 from `prisma/migrations/*/migration.sql` (which is unaffected) rather
 than keeping the introspected schema.
 
-## Not yet implemented
+## Production-shaped local compose (Phase 10)
 
-- CI/CD (GitHub Actions lint/test/build/scan/deploy) — **Phase 10**.
-- Cloud VM / Nginx reverse proxy in front of the compose stack —
-  **Phase 10**.
-- Kubernetes/k3s manifests, Prometheus/Grafana — **Phase 11**.
+```bash
+# JWT_SECRET and ENCRYPTION_KEY must not be the Phase-1 insecure defaults.
+pnpm docker:prod
+```
+
+`docker-compose.prod.yml` does not publish Postgres or Redis to the
+host. Web is on http://localhost:8080. The API image runs as `USER
+node` and probes `GET /api/health`.
+
+## CI (Phase 10)
+
+`.github/workflows/ci.yml` runs typecheck, lint, unit tests, `pnpm
+audit --audit-level=high`, and builds the three Docker images. It does
+**not** deploy anywhere (`local_only`).
+
+## Kubernetes / k3s (Phase 11, local)
+
+Manifests live in `deploy/k8s` with placeholder hosts
+`jobpilot.example.com` and `api.jobpilot.example.com`. Copy
+`secret.yaml.example` to `secret.yaml` (gitignored) before apply:
+
+```bash
+docker build -f docker/Dockerfile.api -t jobpilot-api:local .
+docker build -f docker/Dockerfile.worker -t jobpilot-worker:local .
+docker build -f docker/Dockerfile.web -t jobpilot-web:local .
+kubectl apply -f deploy/k8s/secret.yaml
+kubectl apply -k deploy/k8s
+```
+
+This is an example for a local cluster. It is not a cloud deploy.
+
+## Local monitoring (Phase 11)
+
+```bash
+pnpm docker:monitoring
+```
+
+Prometheus: http://localhost:9090 (scrapes host `:4000/api/metrics`).
+Grafana: http://localhost:3001 (admin/admin, anonymous viewer).

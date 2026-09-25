@@ -1,3 +1,4 @@
+import { resilientFetch } from "../../http/resilientFetch";
 import type { AshbyApplicationForm, AshbyJobBoardResponse, AshbySubmitPayload, AshbySubmitResult } from "./ashby.types";
 
 const BASE_URL = "https://api.ashbyhq.com/posting-api/job-board";
@@ -10,7 +11,7 @@ const BASE_URL = "https://api.ashbyhq.com/posting-api/job-board";
  * the whole board and finds the job by id.
  */
 export async function fetchAshbyJobBoard(jobBoardName: string): Promise<AshbyJobBoardResponse> {
-  const response = await fetch(`${BASE_URL}/${encodeURIComponent(jobBoardName)}`);
+  const response = await resilientFetch(`${BASE_URL}/${encodeURIComponent(jobBoardName)}`);
   if (!response.ok) {
     throw new Error(`Ashby job board API returned ${response.status} for board "${jobBoardName}".`);
   }
@@ -19,7 +20,7 @@ export async function fetchAshbyJobBoard(jobBoardName: string): Promise<AshbyJob
 
 /** Spec section 18's cited application-form-specification retrieval. */
 export async function fetchAshbyApplicationForm(jobBoardName: string, jobId: string): Promise<AshbyApplicationForm> {
-  const response = await fetch(`${BASE_URL}/${encodeURIComponent(jobBoardName)}/${encodeURIComponent(jobId)}/application-form`);
+  const response = await resilientFetch(`${BASE_URL}/${encodeURIComponent(jobBoardName)}/${encodeURIComponent(jobId)}/application-form`);
   if (!response.ok) {
     throw new Error(`Ashby application-form API returned ${response.status} for job "${jobId}".`);
   }
@@ -32,7 +33,7 @@ export async function fetchAshbyApplicationForm(jobBoardName: string, jobId: str
  * rather than retried or bypassed.
  */
 export async function submitAshbyApplication(jobBoardName: string, jobId: string, payload: AshbySubmitPayload): Promise<AshbySubmitResult> {
-  const response = await fetch(`${BASE_URL}/${encodeURIComponent(jobBoardName)}/${encodeURIComponent(jobId)}/application`, {
+  const response = await resilientFetch(`${BASE_URL}/${encodeURIComponent(jobBoardName)}/${encodeURIComponent(jobId)}/application`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),

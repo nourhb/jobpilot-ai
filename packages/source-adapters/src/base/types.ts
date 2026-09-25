@@ -67,6 +67,8 @@ export interface ApplicationResult {
  */
 export interface JobSourceAdapter {
   readonly sourceName: string;
+  /** Optional advertised cap (section 66). Callers may honor this; the HTTP client also retries/times out independently. */
+  readonly rateLimit?: SourceRateLimit;
 
   discoverJobs(): Promise<RawJob[]>;
 

@@ -1,4 +1,4 @@
-# Security (Phase 1 baseline)
+# Security (Phase 10)
 
 ## Implemented in Phase 1
 
@@ -29,18 +29,31 @@
   headers and any `password`/`passwordHash` fields; `AuditLog.metadata`
   is populated only with non-sensitive fields by callers.
 
-## Explicitly deferred to later phases (not implemented yet — do not assume otherwise)
+## Added in later phases
 
-- CV/document upload validation (MIME + extension + file signature +
-  size, UUID renaming) — **Phase 2**.
-- Encryption at rest for sensitive candidate data (`ENCRYPTION_KEY` is
-  wired into env validation now but nothing encrypts with it yet) —
-  **Phase 2+**.
-- CSRF protection — needed once the app has state-changing GET-adjacent
-  flows beyond simple cookie+bearer auth; revisit when the dashboard's
-  form surface grows — **Phase 9/10**.
-- Full production hardening checklist (secret rotation, dependency
-  scanning, security scan in CI) — **Phase 10**.
+- **CV/document upload validation (Phase 2):** MIME + extension + magic
+  bytes + 10MB cap + UUID rename (`apps/api/src/documents`).
+- **Field-level encryption helper (Phase 10):** `encryptField` /
+  `decryptField` (AES-256-GCM) using `ENCRYPTION_KEY`. Existing
+  Profile/User columns stay plaintext so Truth Layer comparisons stay
+  exact; new secrets can use the helper without a rewrite.
+- **CSRF / Origin check (Phase 10):** mutating cookie-authenticated
+  requests must come from `CORS_ORIGIN` / `APP_URL`. Bearer tokens skip
+  the check (API clients). Missing Origin is allowed only outside
+  production.
+- **Account deletion (Phase 10, section 85):** `DELETE /api/account`
+  stops the agent, deletes resume files, writes `ACCOUNT_DELETED`, then
+  cascades the user row.
+- **Production probes (Phase 10):** `GET /api/health` (liveness) and
+  `GET /api/ready` (Postgres + Redis, no error details in production)
+  stay mounted in production. Detailed `/api/health/database|/redis|/ai`
+  remain development-only.
+- **CI (Phase 10):** GitHub Actions runs typecheck, lint, unit tests,
+  `pnpm audit --audit-level=high`, and Docker image builds. No cloud
+  deploy (`local_only`).
+- **Docker hardening (Phase 10):** non-root `node` user, storage dir
+  ownership, API HEALTHCHECK, hardened nginx headers,
+  `docker-compose.prod.yml` (Postgres/Redis not published).
 
 ## Standing rules (apply to every future phase)
 

@@ -70,6 +70,7 @@ enum AuditAction {
   AGENT_PAUSED
   AGENT_STOPPED
   APPLICATION_SUBMITTED
+  ACCOUNT_DELETED
 }
 
 model AuditLog {

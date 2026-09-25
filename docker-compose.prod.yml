@@ -1,15 +1,16 @@
-name: jobpilot-ai
+# Production-shaped local compose (local_only). Does not publish
+# Postgres/Redis to the host. Requires JWT_SECRET and ENCRYPTION_KEY
+# to be set in .env (the API refuses the Phase-1 insecure defaults).
+name: jobpilot-ai-prod
 
 services:
   postgres:
     image: postgres:16-alpine
-    restart: unless-stopped
+    restart: always
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-jobpilot}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-jobpilot}
       POSTGRES_DB: ${POSTGRES_DB:-jobpilot}
-    ports:
-      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -20,9 +21,7 @@ services:
 
   redis:
     image: redis:7-alpine
-    restart: unless-stopped
-    ports:
-      - "6379:6379"
+    restart: always
     volumes:
       - redis_data:/data
     healthcheck:
@@ -35,33 +34,16 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile.api
-    restart: unless-stopped
+    restart: always
     env_file: .env
     environment:
       NODE_ENV: production
       PORT: 4000
-      # Override host-oriented values from .env: inside the compose
-      # network, services reach each other by service name, not
-      # localhost.
       DATABASE_URL: postgresql://${POSTGRES_USER:-jobpilot}:${POSTGRES_PASSWORD:-jobpilot}@postgres:5432/${POSTGRES_DB:-jobpilot}
       REDIS_URL: redis://redis:6379
-      # Phase 2: local-disk resume storage adapter. Bind-mounted below so
-      # uploaded resumes survive container restarts/rebuilds.
       STORAGE_DIR: /app/storage
     ports:
       - "4000:4000"
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "node",
-          "-e",
-          "fetch('http://127.0.0.1:4000/api/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
-        ]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 25s
     volumes:
       - resume_storage:/app/storage
     depends_on:
@@ -74,7 +56,7 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile.worker
-    restart: unless-stopped
+    restart: always
     env_file: .env
     environment:
       NODE_ENV: production
@@ -95,9 +77,9 @@ services:
       dockerfile: docker/Dockerfile.web
       args:
         VITE_API_URL: ${API_URL:-http://localhost:4000}
-    restart: unless-stopped
+    restart: always
     ports:
-      - "5173:80"
+      - "8080:80"
     depends_on:
       - api
 

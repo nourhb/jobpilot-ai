@@ -1,4 +1,5 @@
 export * from "./base";
+export * from "./http/resilientFetch";
 export * from "./normalize";
 export * from "./dedup";
 export * from "./registry";

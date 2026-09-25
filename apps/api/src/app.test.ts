@@ -18,6 +18,26 @@ describe("app", () => {
     expect(response.body).toMatchObject({ success: true, data: { status: "OK", service: "api" } });
   });
 
+  it("responds to GET /api/ready when dependencies are up", async () => {
+    const { createApp } = await import("./app");
+    const app = createApp();
+
+    const response = await request(app).get("/api/ready");
+
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject({ success: true, data: { status: "OK", service: "ready" } });
+  });
+
+  it("exposes Prometheus text on GET /api/metrics", async () => {
+    const { createApp } = await import("./app");
+    const app = createApp();
+
+    const response = await request(app).get("/api/metrics");
+
+    expect(response.status).toBe(200);
+    expect(response.text).toContain("jobpilot_up 1");
+  });
+
   it("returns a structured 404 for unknown routes", async () => {
     const { createApp } = await import("./app");
     const app = createApp();

@@ -1,3 +1,4 @@
+import { resilientFetch } from "../../http/resilientFetch";
 import type { GreenhouseJobDetail, GreenhouseJobsResponse } from "./greenhouse.types";
 
 const BASE_URL = "https://boards-api.greenhouse.io/v1/boards";
@@ -14,7 +15,7 @@ const BASE_URL = "https://boards-api.greenhouse.io/v1/boards";
  * real employer's board.
  */
 export async function fetchGreenhouseJobs(boardToken: string): Promise<GreenhouseJobsResponse> {
-  const response = await fetch(`${BASE_URL}/${encodeURIComponent(boardToken)}/jobs?content=true`);
+  const response = await resilientFetch(`${BASE_URL}/${encodeURIComponent(boardToken)}/jobs?content=true`);
   if (!response.ok) {
     throw new Error(`Greenhouse job board API returned ${response.status} for board "${boardToken}".`);
   }
@@ -22,7 +23,7 @@ export async function fetchGreenhouseJobs(boardToken: string): Promise<Greenhous
 }
 
 export async function fetchGreenhouseJobDetail(boardToken: string, jobId: string): Promise<GreenhouseJobDetail> {
-  const response = await fetch(`${BASE_URL}/${encodeURIComponent(boardToken)}/jobs/${encodeURIComponent(jobId)}?questions=true`);
+  const response = await resilientFetch(`${BASE_URL}/${encodeURIComponent(boardToken)}/jobs/${encodeURIComponent(jobId)}?questions=true`);
   if (!response.ok) {
     throw new Error(`Greenhouse job board API returned ${response.status} for job "${jobId}" on board "${boardToken}".`);
   }

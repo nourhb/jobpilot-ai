@@ -367,5 +367,23 @@ implemented so far:
     MANUAL_REVIEW; Stop Agent emits AGENT_STOPPED. A notify failure
     never fails the application pipeline.
 
-Phases 10–11 (production security/CI, Kubernetes) are intentionally
-not started yet.
+- **Phase 10 (done):** Security hardening, Settings UI, production
+  Docker, and CI (`local_only` — no cloud deploy).
+  - Origin/CSRF middleware on mutating cookie requests; `DELETE
+    /api/account` (stop agent, delete resume files, cascade user);
+    Settings page; AES-256-GCM `encryptField` helper; always-on
+    `GET /api/health` + `GET /api/ready` + Prometheus text
+    `GET /api/metrics`.
+  - Source HTTP clients use `resilientFetch` (timeout, 5xx/network
+    retry with 2s/5s backoff, per-host circuit breaker). 403/429
+    anti-bot responses are never retried.
+  - GitHub Actions: typecheck, lint, unit tests, `pnpm audit`, Docker
+    image builds. Dockerfiles run as `USER node` with a liveness
+    HEALTHCHECK. `docker-compose.prod.yml` keeps Postgres/Redis off
+    the host network.
+
+- **Phase 11 (done):** Local Kubernetes/k3s example manifests
+  (`deploy/k8s`, hosts `jobpilot.example.com` /
+  `api.jobpilot.example.com`) and local Prometheus/Grafana
+  (`docker-compose.monitoring.yml` scraping `/api/metrics`). No
+  public domain or cloud credentials required.

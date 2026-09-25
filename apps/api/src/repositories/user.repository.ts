@@ -25,6 +25,10 @@ export const userRepository = {
     return prisma.user.create({ data: input });
   },
 
+  delete(id: string): Promise<User> {
+    return prisma.user.delete({ where: { id } });
+  },
+
   update(id: string, input: Partial<Pick<User, "firstName" | "lastName" | "phone" | "city" | "province" | "country" | "linkedinUrl" | "githubUrl" | "portfolioUrl">>): Promise<User> {
     return prisma.user.update({ where: { id }, data: input });
   },

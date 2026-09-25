@@ -11,6 +11,37 @@ export const healthController = {
     res.status(200).json({ success: true, data: body });
   },
 
+  /**
+   * Always-on readiness probe for Docker/k8s (Phase 10/11). Production
+   * responses never include dependency error strings.
+   */
+  async readiness(_req: Request, res: Response): Promise<void> {
+    const timestamp = new Date().toISOString();
+    try {
+      await prisma.$queryRaw`SELECT 1`;
+      const pong = await redis.ping();
+      if (pong !== "PONG") {
+        throw new Error("Redis did not respond with PONG");
+      }
+      const body: HealthStatus = { status: "OK", service: "ready", timestamp };
+      res.status(200).json({ success: true, data: body });
+    } catch (error) {
+      const body: HealthStatus = {
+        status: "DOWN",
+        service: "ready",
+        timestamp,
+        ...(env.NODE_ENV !== "production"
+          ? { details: { message: error instanceof Error ? error.message : "Unknown error" } }
+          : {}),
+      };
+      res.status(503).json({
+        success: false,
+        error: { code: "NOT_READY", message: "Service is not ready" },
+        data: body,
+      });
+    }
+  },
+
   async database(_req: Request, res: Response): Promise<void> {
     try {
       await prisma.$queryRaw`SELECT 1`;

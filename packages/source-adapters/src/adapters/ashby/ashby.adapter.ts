@@ -64,6 +64,7 @@ export function createAshbyAdapter(
 ): JobSourceAdapter & Required<Pick<JobSourceAdapter, "getApplicationForm" | "submitApplication">> {
   return {
     sourceName: `ashby:${config.jobBoardName}`,
+    rateLimit: { requestsPerMinute: 30, concurrency: 2 },
 
     // AshbyDiscoveryService
     async discoverJobs(): Promise<RawJob[]> {

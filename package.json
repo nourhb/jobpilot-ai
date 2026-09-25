@@ -19,7 +19,9 @@
     "db:seed": "pnpm --filter api run db:seed",
     "db:studio": "pnpm --filter api run db:studio",
     "docker:up": "docker compose up -d",
-    "docker:down": "docker compose down"
+    "docker:down": "docker compose down",
+    "docker:prod": "docker compose -f docker-compose.prod.yml up -d --build",
+    "docker:monitoring": "docker compose -f docker-compose.monitoring.yml up -d"
   },
   "dependencies": {
     "@prisma/client": "^6.1.0"

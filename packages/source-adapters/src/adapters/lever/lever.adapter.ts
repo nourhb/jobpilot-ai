@@ -69,6 +69,7 @@ export function createLeverAdapter(
 ): JobSourceAdapter & Required<Pick<JobSourceAdapter, "getApplicationForm" | "submitApplication">> {
   return {
     sourceName: `lever:${config.company}`,
+    rateLimit: { requestsPerMinute: 30, concurrency: 2 },
 
     // LeverDiscoveryService
     async discoverJobs(): Promise<RawJob[]> {
