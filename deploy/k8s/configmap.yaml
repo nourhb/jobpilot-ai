@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jobpilot-config
+  namespace: jobpilot
+data:
+  NODE_ENV: "production"
+  PORT: "4000"
+  APP_URL: "https://jobpilot.example.com"
+  API_URL: "https://api.jobpilot.example.com"
+  CORS_ORIGIN: "https://jobpilot.example.com"
+  STORAGE_PROVIDER: "local"
+  STORAGE_DIR: "/app/storage"
+  AI_PROVIDER: "mock"
+  GREENHOUSE_ENABLED: "false"
+  LEVER_ENABLED: "false"
+  ASHBY_ENABLED: "false"
+  DISCOVERY_INTERVAL_MINUTES: "30"
+  AGENT_TICK_INTERVAL_MINUTES: "5"
