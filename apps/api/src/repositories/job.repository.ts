@@ -1,4 +1,4 @@
-import type { JobEmploymentType, JobStatus, Prisma, RemoteType } from "@prisma/client";
+import type { JobEmploymentType, JobSourceType, JobStatus, Prisma, RemoteType } from "@prisma/client";
 import { prisma } from "../lib/prisma";
 
 export interface UpsertJobInput {
@@ -66,6 +66,22 @@ export const jobRepository = {
 
   findBySourceAndExternalId(sourceId: string, externalId: string) {
     return prisma.job.findUnique({ where: { sourceId_externalId: { sourceId, externalId } } });
+  },
+
+  /**
+   * Phase 8: active postings the scheduler should match. An empty
+   * `sourceTypes` list means "no restriction" (every source is eligible),
+   * matching JobPreference.allowedSourceTypes' documented empty-array
+   * semantics.
+   */
+  listActiveIds(sourceTypes: JobSourceType[] = []) {
+    return prisma.job.findMany({
+      where: {
+        status: "ACTIVE",
+        ...(sourceTypes.length > 0 ? { source: { type: { in: sourceTypes } } } : {}),
+      },
+      select: { id: true },
+    });
   },
 
   /** Fingerprints of already-stored jobs, used for secondary/tertiary dedup lookups. */

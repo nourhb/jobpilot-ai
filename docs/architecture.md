@@ -42,7 +42,7 @@ on top of it (Fact Checker, Application Policy Engine).
                       BullMQ Phase 8)
                            |
                     ┌──────▼────────┐
-                    │ Worker Engine │   apps/api/src/worker.ts (placeholder)
+                    │ Worker Engine │   apps/api/src/worker.ts
                     └───────────────┘
 ```
 
@@ -313,5 +313,38 @@ implemented so far:
     gating, the bridge) verified entirely against realistic recorded
     fixtures -- no test in this phase makes a real network call.
 
-Phases 8–11 (autonomous agent scheduler, dashboard, production
-security/CI, Kubernetes) are intentionally not started yet.
+- **Phase 8 (done):** BullMQ queues, Redis workers, and the
+  AgentScheduler (sections 39-42).
+  - All nine queue names from section 40 exist as stable constants
+    (`apps/api/src/queues/queueNames.ts`). Only four are consumed by
+    live workers: `job-discovery`, `job-matching`,
+    `application-preparation`, and `agent-tick` (plus a no-op
+    `notifications` stub reserved for Phase 9). The finer-grained
+    cover-letter / validation / submission / verification queues are
+    *not* separate workers -- those stages already live inside
+    `application.service.ts` (Phase 6) so there is never an
+    `LLM -> Submit` hop across a queue boundary, which would break
+    section 77's Zero Mistake architecture.
+  - `agentScheduler.service.ts` (section 39) is pure orchestration: it
+    never submits. Auto-apply only *enqueues* an application job, and
+    only when the system's own match decision is APPLY, the user has
+    `autoApplyEnabled`, the job's source is on
+    `allowedSourceTypes` (empty = no restriction), no Application row
+    already exists (section 42), and the rolling
+    `maxApplicationsPerDay` / `maxApplicationsPerHour` caps have
+    headroom. REVIEW/SKIP never auto-apply. Manual `apply:run` is
+    never rate-limited by these caps.
+  - Repeatable jobs (`DISCOVERY_INTERVAL_MINUTES`, default 30;
+    `AGENT_TICK_INTERVAL_MINUTES`, default 5) are registered by the
+    worker process only -- the API process never starts workers, so a
+    stuck submit cannot block HTTP. `pnpm --filter api run agent:run`
+    is the in-process local stopgap (same role as `discover:run` /
+    `apply:run`), so Phase 8 is testable without cloud credentials
+    (`local_only`).
+  - BullMQ jobIds (`match:${userId}:${jobId}`,
+    `apply:${userId}:${jobId}`) plus Application's existing
+    `idempotencyKey` / `@@unique([userId, jobId])` make every worker
+    idempotent (section 41/42): a crash-and-retry cannot submit twice.
+
+Phases 9–11 (dashboard, production security/CI, Kubernetes) are
+intentionally not started yet.

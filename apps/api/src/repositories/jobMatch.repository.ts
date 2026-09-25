@@ -43,4 +43,13 @@ export const jobMatchRepository = {
   findByUserAndJob(userId: string, jobId: string) {
     return prisma.jobMatch.findUnique({ where: { userId_jobId: { userId, jobId } } });
   },
+
+  listJobIdsForUser(userId: string) {
+    return prisma.jobMatch.findMany({ where: { userId }, select: { jobId: true } });
+  },
+
+  /** APPLY decisions the scheduler can consider for auto-apply. */
+  listApplyJobIdsForUser(userId: string) {
+    return prisma.jobMatch.findMany({ where: { userId, decision: "APPLY" }, select: { jobId: true } });
+  },
 };

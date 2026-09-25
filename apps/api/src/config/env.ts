@@ -35,6 +35,14 @@ const envSchema = z.object({
   LEVER_ENABLED: z.coerce.boolean().default(false),
   ASHBY_ENABLED: z.coerce.boolean().default(false),
 
+  // --- Phase 8: AgentScheduler (section 39) ---
+  // System-wide, not per-user: Job/Application data is shared across
+  // every user, so discovery runs on one global schedule regardless of
+  // how many users have auto-apply enabled. Defaults match section 39's
+  // own worked example ("Discovery: Every 30 minutes").
+  DISCOVERY_INTERVAL_MINUTES: z.coerce.number().int().positive().default(30),
+  AGENT_TICK_INTERVAL_MINUTES: z.coerce.number().int().positive().default(5),
+
   ENCRYPTION_KEY: z.string().default("dev-only-insecure-key-change-me-please"),
 
   CORS_ORIGIN: z.string().default("http://localhost:5173"),

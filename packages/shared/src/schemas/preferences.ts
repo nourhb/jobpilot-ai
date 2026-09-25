@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { JOB_EMPLOYMENT_TYPES } from "../constants";
+import { JOB_EMPLOYMENT_TYPES, JOB_SOURCE_TYPES } from "../constants";
 
 /**
  * Body for PUT /api/preferences (section 12: JobPreference). Every field
@@ -35,5 +35,11 @@ export const jobPreferenceUpdateSchema = z.object({
   autoApplyEnabled: z.boolean().optional(),
   autoCoverLetterEnabled: z.boolean().optional(),
   autoQuestionAnswerEnabled: z.boolean().optional(),
+
+  /** Phase 8 (section 39): AgentScheduler rate limits and source allowlist. */
+  maxApplicationsPerDay: z.number().int().min(1).max(500).optional(),
+  maxApplicationsPerHour: z.number().int().min(1).max(100).optional(),
+  /** Empty = no restriction (every enabled source is eligible). */
+  allowedSourceTypes: z.array(z.enum(JOB_SOURCE_TYPES)).max(JOB_SOURCE_TYPES.length).optional(),
 });
 export type JobPreferenceUpdateInput = z.infer<typeof jobPreferenceUpdateSchema>;

@@ -68,4 +68,13 @@ export const applicationRepository = {
   updateStatus(id: string, input: UpdateApplicationStatusInput) {
     return prisma.application.update({ where: { id }, data: input });
   },
+
+  listJobIdsForUser(userId: string) {
+    return prisma.application.findMany({ where: { userId }, select: { jobId: true } });
+  },
+
+  /** Rolling window used by AgentScheduler rate limits (section 39). */
+  countCreatedSince(userId: string, since: Date) {
+    return prisma.application.count({ where: { userId, createdAt: { gte: since } } });
+  },
 };

@@ -15,6 +15,8 @@
 // PHASE 6: Application, CoverLetter, ApplicationAnswer, ApplicationEvent
 //          (the Application Engine, Mock ATS, Validator, and Policy
 //          Engine -- see apps/api/src/applications/).
+// PHASE 8: JobPreference.maxApplicationsPerDay / maxApplicationsPerHour /
+//          allowedSourceTypes (AgentScheduler -- see apps/api/src/scheduler/).
 
 generator client {
   provider = "prisma-client-js"
@@ -446,6 +448,21 @@ model JobPreference {
   autoApplyEnabled          Boolean @default(false)
   autoCoverLetterEnabled    Boolean @default(false)
   autoQuestionAnswerEnabled Boolean @default(false)
+
+  /// PHASE 8 (section 39, AgentScheduler's "Maximum applications/day" /
+  /// "Maximum applications/hour"): read by `agentScheduler.service.ts`
+  /// to cap how many applications the scheduler auto-enqueues for this
+  /// user per rolling day/hour window. Only enforced when
+  /// `autoApplyEnabled` is true -- manual applications (via the API
+  /// directly) are never rate-limited by these.
+  maxApplicationsPerDay  Int @default(20)
+  maxApplicationsPerHour Int @default(5)
+
+  /// PHASE 8 (section 39's "Allowed sources"): empty means "no
+  /// restriction -- every enabled JobSource is eligible", not "no
+  /// sources allowed", so a fresh user isn't silently locked out of
+  /// auto-apply until they explicitly configure this.
+  allowedSourceTypes JobSourceType[] @default([])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

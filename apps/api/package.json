@@ -10,6 +10,7 @@
     "start:worker": "tsx src/worker.ts",
     "discover:run": "tsx src/scripts/discoverJobs.ts",
     "apply:run": "tsx src/scripts/applyToJob.ts",
+    "agent:run": "tsx src/scripts/runAgentTick.ts",
     "lint": "eslint src --ext .ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
@@ -27,6 +28,7 @@
     "@jobpilot/source-adapters": "workspace:*",
     "@prisma/client": "^6.1.0",
     "argon2": "^0.41.1",
+    "bullmq": "^6.3.8",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
@@ -43,7 +45,6 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
-    "dotenv-cli": "^7.4.4",
     "@types/cookie-parser": "^1.4.7",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
@@ -52,6 +53,7 @@
     "@types/node": "^22.10.2",
     "@types/pdf-parse": "^1.1.4",
     "@types/supertest": "^6.0.2",
+    "dotenv-cli": "^7.4.4",
     "pino-pretty": "^13.0.0",
     "prisma": "^6.1.0",
     "supertest": "^7.0.0",

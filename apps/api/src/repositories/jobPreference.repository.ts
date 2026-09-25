@@ -12,4 +12,9 @@ export const jobPreferenceRepository = {
   update(userId: string, data: Prisma.JobPreferenceUpdateInput) {
     return prisma.jobPreference.update({ where: { userId }, data });
   },
+
+  /** Phase 8: AgentScheduler only auto-enqueues applications for users who opted in. */
+  listAutoApplyEnabled() {
+    return prisma.jobPreference.findMany({ where: { autoApplyEnabled: true } });
+  },
 };
