@@ -38,7 +38,7 @@ export function createProcessors(queue: AgentQueue) {
     },
 
     async processApplication(data: ApplicationJobData): Promise<void> {
-      await applicationService.createAndProcess(data.userId, data.jobId);
+      await applicationService.createAndProcess(data.userId, data.jobId, { force: true });
     },
 
     async processTick(): Promise<void> {

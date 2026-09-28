@@ -249,7 +249,7 @@ export function PreferencesPage() {
           <CardHeader>
             <CardTitle className="text-base">Automation</CardTitle>
             <CardDescription>
-              The minimum score (section 28) required for the system to mark a job APPLY instead of REVIEW or SKIP.
+              Starting the agent turns auto-apply on. This score is the cutoff it uses before applying.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -267,7 +267,7 @@ export function PreferencesPage() {
             <Separator />
             <label className="flex items-center gap-2 text-sm">
               <input type="checkbox" checked={form.autoApplyEnabled} onChange={(e) => setForm({ ...form, autoApplyEnabled: e.target.checked })} />
-              Enable auto-apply (Phase 6+)
+              Enable auto-apply (also turned on when you start the agent)
             </label>
             <label className="flex items-center gap-2 text-sm">
               <input

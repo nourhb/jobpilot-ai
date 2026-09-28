@@ -9,6 +9,7 @@ export interface AgentState {
   allowedSourceTypes: string[];
   autoCoverLetterEnabled: boolean;
   autoQuestionAnswerEnabled: boolean;
+  profileReady: boolean;
 }
 
 export interface AgentLog {

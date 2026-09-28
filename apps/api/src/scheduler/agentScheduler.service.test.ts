@@ -10,13 +10,11 @@ vi.mock("../repositories/jobPreference.repository", () => ({
 }));
 vi.mock("../repositories/job.repository", () => ({
   jobRepository: {
-    listActiveIds: vi.fn(),
     findByIdWithSource: vi.fn(),
   },
 }));
 vi.mock("../repositories/jobMatch.repository", () => ({
   jobMatchRepository: {
-    listJobIdsForUser: vi.fn(),
     listApplyJobIdsForUser: vi.fn(),
   },
 }));
@@ -24,6 +22,11 @@ vi.mock("../repositories/application.repository", () => ({
   applicationRepository: {
     findByUserAndJob: vi.fn(),
     countCreatedSince: vi.fn(),
+  },
+}));
+vi.mock("../matching/jobMatch.service", () => ({
+  jobMatchService: {
+    prepareAgentMatches: vi.fn(),
   },
 }));
 
@@ -137,25 +140,28 @@ describe("agentSchedulerService", () => {
   });
 
   describe("tick", () => {
-    it("enqueues matching only for unmatched active jobs, then auto-applies existing APPLY matches", async () => {
+    it("ranks CV matches then auto-applies existing APPLY decisions", async () => {
       const { jobPreferenceRepository } = await import("../repositories/jobPreference.repository");
-      const { jobRepository } = await import("../repositories/job.repository");
       const { jobMatchRepository } = await import("../repositories/jobMatch.repository");
       const { applicationRepository } = await import("../repositories/application.repository");
+      const { jobMatchService } = await import("../matching/jobMatch.service");
       const { agentSchedulerService } = await import("./agentScheduler.service");
 
       vi.mocked(jobPreferenceRepository.listRunnable).mockResolvedValue([autoApplyPrefs] as never);
-      vi.mocked(jobRepository.listActiveIds).mockResolvedValue([{ id: "job-new" }, { id: "job-old" }] as never);
-      vi.mocked(jobMatchRepository.listJobIdsForUser).mockResolvedValue([{ jobId: "job-old" }] as never);
-      vi.mocked(jobMatchRepository.listApplyJobIdsForUser).mockResolvedValue([{ jobId: "job-old" }] as never);
+      vi.mocked(jobMatchService.prepareAgentMatches).mockResolvedValue({
+        profileReady: true,
+        scanned: 40,
+        matched: 8,
+        applyJobIds: ["job-old"],
+      });
       vi.mocked(applicationRepository.findByUserAndJob).mockResolvedValue(null);
       vi.mocked(applicationRepository.countCreatedSince).mockResolvedValue(0);
 
       const queue = fakeQueue();
       const result = await agentSchedulerService.tick(queue);
 
-      expect(result).toEqual({ usersConsidered: 1, matchesEnqueued: 1, applicationsEnqueued: 1, applicationsSkipped: 0 });
-      expect(queue.matches).toEqual(["user-1:job-new"]);
+      expect(result).toEqual({ usersConsidered: 1, matchesEnqueued: 8, applicationsEnqueued: 1, applicationsSkipped: 0 });
+      expect(queue.matches).toEqual([]);
       expect(queue.applications).toEqual(["user-1:job-old"]);
     });
 

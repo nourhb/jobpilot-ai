@@ -1,8 +1,8 @@
 import type { JobSourceType } from "@prisma/client";
 import { jobPreferenceRepository } from "../repositories/jobPreference.repository";
 import { jobRepository } from "../repositories/job.repository";
-import { jobMatchRepository } from "../repositories/jobMatch.repository";
 import { applicationRepository } from "../repositories/application.repository";
+import { jobMatchService } from "../matching/jobMatch.service";
 import { logger } from "../lib/logger";
 
 /**
@@ -105,9 +105,9 @@ export const agentSchedulerService = {
   },
 
   /**
-   * One scheduler tick (section 39). For every user with auto-apply on:
-   * enqueue matching for active jobs they have not matched yet, then
-   * retry APPLY matches that were previously rate-limited.
+   * One scheduler tick. Rank CV-matching jobs (not every posting in the
+   * catalog), persist those scores, then enqueue APPLY applications up
+   * to the user's hourly/daily caps.
    */
   async tick(queue: AgentQueue): Promise<TickResult> {
     const result: TickResult = { usersConsidered: 0, matchesEnqueued: 0, applicationsEnqueued: 0, applicationsSkipped: 0 };
@@ -115,23 +115,16 @@ export const agentSchedulerService = {
     result.usersConsidered = users.length;
 
     for (const preferences of users) {
-      const jobs = await jobRepository.listActiveIds(preferences.allowedSourceTypes);
-      const alreadyMatched = new Set((await jobMatchRepository.listJobIdsForUser(preferences.userId)).map((row) => row.jobId));
+      const prepared = await jobMatchService.prepareAgentMatches(preferences.userId);
+      result.matchesEnqueued += prepared.matched;
 
-      for (const job of jobs) {
-        if (alreadyMatched.has(job.id)) continue;
-        await queue.enqueueMatch(preferences.userId, job.id);
-        result.matchesEnqueued += 1;
-      }
-
-      const applyJobIds = await jobMatchRepository.listApplyJobIdsForUser(preferences.userId);
-      for (const row of applyJobIds) {
-        const decision = await this.canAutoApply(preferences.userId, row.jobId, preferences);
+      for (const jobId of prepared.applyJobIds) {
+        const decision = await this.canAutoApply(preferences.userId, jobId, preferences);
         if (!decision.allowed) {
           result.applicationsSkipped += 1;
           continue;
         }
-        await queue.enqueueApplication(preferences.userId, row.jobId);
+        await queue.enqueueApplication(preferences.userId, jobId);
         result.applicationsEnqueued += 1;
       }
     }

@@ -262,4 +262,27 @@ describe("jobMatchService.rankJobsForUser", () => {
     expect(result.items[0]?.matchedSkills).toContain("Kubernetes");
     expect(result.items[0]?.score).toBeGreaterThan(50);
   });
+
+  it("persists ranked matches for the agent without calling the AI", async () => {
+    const { jobRepository } = await import("../repositories/job.repository");
+    const { jobPreferenceRepository } = await import("../repositories/jobPreference.repository");
+    const { jobMatchRepository } = await import("../repositories/jobMatch.repository");
+    const { profileService } = await import("../profile/profile.service");
+    const { interpretJobMatch } = await import("@jobpilot/ai");
+    const { jobMatchService } = await import("./jobMatch.service");
+
+    vi.mocked(profileService.getVerifiedCandidateProfile).mockResolvedValue(baseProfile);
+    vi.mocked(jobPreferenceRepository.getOrCreateForUser).mockResolvedValue({ ...basePreferences, minimumMatchScore: 10 } as never);
+    vi.mocked(jobRepository.listByKeywords).mockResolvedValue([baseJob] as never);
+    vi.mocked(jobRepository.listRecentActive).mockResolvedValue([]);
+    vi.mocked(jobMatchRepository.upsert).mockResolvedValue({} as never);
+
+    const result = await jobMatchService.prepareAgentMatches("user-1");
+
+    expect(interpretJobMatch).not.toHaveBeenCalled();
+    expect(result.profileReady).toBe(true);
+    expect(result.matched).toBe(1);
+    expect(result.applyJobIds).toEqual(["job-1"]);
+    expect(jobMatchRepository.upsert).toHaveBeenCalledWith(expect.objectContaining({ userId: "user-1", jobId: "job-1", decision: "APPLY" }));
+  });
 });

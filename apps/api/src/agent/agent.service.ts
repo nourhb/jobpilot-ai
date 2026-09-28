@@ -3,7 +3,10 @@ import { jobPreferenceRepository } from "../repositories/jobPreference.repositor
 import { dashboardRepository } from "../repositories/dashboard.repository";
 import { notificationService } from "../notifications/notification.service";
 import { auditService } from "../audit/audit.service";
+import { profileService } from "../profile/profile.service";
+import { kickAgentNow } from "../queues/kick";
 import { AppError } from "../middleware/errorHandler";
+import { logger } from "../lib/logger";
 
 const AUDIT_BY_STATUS: Record<Exclude<AgentStatus, "ERROR">, "AGENT_STARTED" | "AGENT_PAUSED" | "AGENT_STOPPED"> = {
   RUNNING: "AGENT_STARTED",
@@ -12,13 +15,15 @@ const AUDIT_BY_STATUS: Record<Exclude<AgentStatus, "ERROR">, "AGENT_STARTED" | "
 };
 
 /**
- * Phase 9 (sections 47-49). Runtime control for the AgentScheduler.
- * START/PAUSE/STOP only flip `JobPreference.agentStatus`; the worker
- * still requires `autoApplyEnabled` before it will enqueue applications.
+ * Runtime control for the job-search agent. START turns auto-apply on
+ * and kicks an immediate tick so the agent actually looks and applies.
  */
 export const agentService = {
   async getState(userId: string) {
-    const preferences = await jobPreferenceRepository.getOrCreateForUser(userId);
+    const [preferences, profile] = await Promise.all([
+      jobPreferenceRepository.getOrCreateForUser(userId),
+      profileService.getVerifiedCandidateProfile(userId),
+    ]);
     return {
       agentStatus: preferences.agentStatus,
       autoApplyEnabled: preferences.autoApplyEnabled,
@@ -28,13 +33,31 @@ export const agentService = {
       allowedSourceTypes: preferences.allowedSourceTypes,
       autoCoverLetterEnabled: preferences.autoCoverLetterEnabled,
       autoQuestionAnswerEnabled: preferences.autoQuestionAnswerEnabled,
+      profileReady: profile.skills.length > 0 || profile.experience.length > 0,
     };
   },
 
   async setStatus(userId: string, agentStatus: Exclude<AgentStatus, "ERROR">) {
     await jobPreferenceRepository.getOrCreateForUser(userId);
-    const updated = await jobPreferenceRepository.update(userId, { agentStatus });
+    const updated = await jobPreferenceRepository.update(userId, {
+      agentStatus,
+      ...(agentStatus === "RUNNING"
+        ? {
+            autoApplyEnabled: true,
+            autoCoverLetterEnabled: true,
+            autoQuestionAnswerEnabled: true,
+          }
+        : {}),
+    });
     await auditService.log(AUDIT_BY_STATUS[agentStatus], { userId, entityType: "JobPreference", entityId: updated.id });
+
+    if (agentStatus === "RUNNING") {
+      try {
+        await kickAgentNow();
+      } catch (error) {
+        logger.warn({ err: error }, "Could not enqueue an immediate agent tick");
+      }
+    }
 
     if (agentStatus === "STOPPED") {
       await notificationService.notify({

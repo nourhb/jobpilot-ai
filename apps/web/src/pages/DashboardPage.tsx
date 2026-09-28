@@ -9,7 +9,7 @@ export function DashboardPage() {
   const { data, isLoading, isError } = useDashboard();
 
   const cards = [
-    { label: "Active agent", value: data ? data.agentStatus : "—", to: "/agent", hint: "Runtime only" },
+    { label: "Active agent", value: data ? data.agentStatus : "—", to: "/agent", hint: "Looks and applies for you" },
     { label: "Jobs scanned", value: data?.jobsScanned ?? "—", to: "/jobs", hint: "From discovery" },
     { label: "Matches", value: data?.matching ?? "—", to: "/matches", hint: "Scored from your CV" },
     { label: "Applications", value: data?.applications ?? "—", to: "/applications", hint: "Every attempt" },
@@ -43,13 +43,17 @@ export function DashboardPage() {
         ))}
       </div>
 
-      {data && !data.autoApplyEnabled && (
+      {data && data.agentStatus !== "RUNNING" && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Auto-apply is off</CardTitle>
+            <CardTitle className="text-lg">Let the agent apply for you</CardTitle>
             <CardDescription>
-              Start the agent from the Agent page after enabling auto-apply in Preferences. The scheduler will
-              not submit anything until both are on.
+              Open{" "}
+              <Link to="/agent" className="text-primary underline">
+                Agent
+              </Link>{" "}
+              and click Start looking and applying. It turns auto-apply on, scans jobs that match your CV, and applies
+              within your daily cap.
             </CardDescription>
           </CardHeader>
         </Card>

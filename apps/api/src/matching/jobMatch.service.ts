@@ -201,7 +201,13 @@ export const jobMatchService = {
         decision: decideFromScore(breakdown.score, preferences.minimumMatchScore),
         matchedSkills: breakdown.matchedSkills,
         skillsScore: breakdown.skillsScore,
+        experienceScore: breakdown.experienceScore,
         titleScore: breakdown.titleScore,
+        locationScore: breakdown.locationScore,
+        authorizationScore: breakdown.authorizationScore,
+        salaryScore: breakdown.salaryScore,
+        employmentTypeScore: breakdown.employmentTypeScore,
+        preferencesScore: breakdown.preferencesScore,
       });
     }
 
@@ -214,6 +220,51 @@ export const jobMatchService = {
       profileReady: true as const,
       scanned: candidates.length,
       items: items.slice(0, MAX_RESULTS),
+    };
+  },
+
+  /**
+   * Agent tick: rank from the verified CV (no AI per job), persist those
+   * matches, and return which ones cleared the user's auto-apply threshold.
+   */
+  async prepareAgentMatches(userId: string) {
+    const ranking = await this.rankJobsForUser(userId);
+    if (!ranking.profileReady) {
+      return { profileReady: false as const, scanned: ranking.scanned, matched: 0, applyJobIds: [] as string[] };
+    }
+
+    const applyJobIds: string[] = [];
+    for (const item of ranking.items) {
+      await jobMatchRepository.upsert({
+        userId,
+        jobId: item.job.id,
+        score: item.score,
+        matchCategory: item.matchCategory,
+        decision: item.decision,
+        skillsScore: item.skillsScore,
+        experienceScore: item.experienceScore,
+        titleScore: item.titleScore,
+        locationScore: item.locationScore,
+        authorizationScore: item.authorizationScore,
+        salaryScore: item.salaryScore,
+        employmentTypeScore: item.employmentTypeScore,
+        preferencesScore: item.preferencesScore,
+        skippedReason: null,
+        reasons:
+          item.matchedSkills.length > 0
+            ? [`Matched skills: ${item.matchedSkills.join(", ")}`]
+            : ["Ranked from your verified CV."],
+        missingRequirements: [],
+        riskFlags: [],
+      });
+      if (item.decision === "APPLY") applyJobIds.push(item.job.id);
+    }
+
+    return {
+      profileReady: true as const,
+      scanned: ranking.scanned,
+      matched: ranking.items.length,
+      applyJobIds,
     };
   },
 };

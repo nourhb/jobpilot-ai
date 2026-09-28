@@ -53,6 +53,6 @@ describe("createProcessors", () => {
     const queue = { enqueueDiscovery: vi.fn(), enqueueMatch: vi.fn(), enqueueApplication: vi.fn() };
     await createProcessors(queue).processApplication({ userId: "user-1", jobId: "job-1" });
 
-    expect(applicationService.createAndProcess).toHaveBeenCalledWith("user-1", "job-1");
+    expect(applicationService.createAndProcess).toHaveBeenCalledWith("user-1", "job-1", { force: true });
   });
 });
