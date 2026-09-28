@@ -1,0 +1,109 @@
+name: Unattended agent
+
+on:
+  schedule:
+    # UTC. GitHub may delay cron by several minutes.
+    - cron: "*/20 * * * *"
+    - cron: "15 */6 * * *"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "tick = match and apply only; discover = refresh boards then apply"
+        type: choice
+        options:
+          - tick
+          - discover
+        default: tick
+
+concurrency:
+  group: jobpilot-agent
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      NODE_ENV: development
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      REDIS_URL: redis://127.0.0.1:6379
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
+      GREENHOUSE_ENABLED: "true"
+      LEVER_ENABLED: "true"
+      ASHBY_ENABLED: "true"
+      AI_PROVIDER: mock
+      STORAGE_PROVIDER: local
+      STORAGE_DIR: /tmp/jobpilot-storage
+    steps:
+      - name: Require a hosted database
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::error::Set the DATABASE_URL repository secret to a hosted Postgres URL (for example Neon). A localhost URL cannot run while your PC is off."
+            exit 1
+          fi
+          case "$DATABASE_URL" in
+            *localhost*|*127.0.0.1*)
+              echo "::error::DATABASE_URL points at localhost. Use a hosted database."
+              exit 1
+              ;;
+          esac
+          if [ -z "$JWT_SECRET" ] || [ ${#JWT_SECRET} -lt 32 ]; then
+            echo "::error::Set JWT_SECRET (32+ characters) as a repository secret. Copy it from your local .env."
+            exit 1
+          fi
+          if [ -z "$ENCRYPTION_KEY" ]; then
+            echo "::error::Set ENCRYPTION_KEY as a repository secret. Copy it from your local .env so encrypted profile fields still decrypt."
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client and apply migrations
+        working-directory: apps/api
+        run: |
+          pnpm exec prisma generate --schema ../../prisma/schema.prisma
+          pnpm exec prisma migrate deploy --schema ../../prisma/schema.prisma
+
+      - name: Turn auto-apply on for every account
+        working-directory: apps/api
+        run: pnpm exec tsx src/scripts/ensureAgentRunnable.ts
+
+      - name: Choose tick or full discovery
+        id: mode
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "mode=${{ inputs.mode }}" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event.schedule }}" = "15 */6 * * *" ]; then
+            echo "mode=discover" >> "$GITHUB_OUTPUT"
+          else
+            echo "mode=tick" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Discover boards, then match and apply
+        if: ${{ steps.mode.outputs.mode == 'discover' }}
+        working-directory: apps/api
+        run: pnpm exec tsx src/scripts/runAgentTick.ts
+
+      - name: Match and apply against jobs already in the database
+        if: ${{ steps.mode.outputs.mode == 'tick' }}
+        working-directory: apps/api
+        run: pnpm exec tsx src/scripts/runAgentTick.ts --skip-discovery

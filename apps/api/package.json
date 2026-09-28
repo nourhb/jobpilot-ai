@@ -11,6 +11,8 @@
     "discover:run": "tsx src/scripts/discoverJobs.ts",
     "apply:run": "tsx src/scripts/applyToJob.ts",
     "agent:run": "tsx src/scripts/runAgentTick.ts",
+    "agent:tick": "tsx src/scripts/runAgentTick.ts --skip-discovery",
+    "agent:ensure": "tsx src/scripts/ensureAgentRunnable.ts",
     "lint": "eslint src --ext .ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",

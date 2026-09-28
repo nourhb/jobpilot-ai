@@ -89,8 +89,33 @@ node` and probes `GET /api/health`.
 ## CI (Phase 10)
 
 `.github/workflows/ci.yml` runs typecheck, lint, unit tests, `pnpm
-audit --audit-level=high`, and builds the three Docker images. It does
-**not** deploy anywhere (`local_only`).
+audit --audit-level=high`, and builds the three Docker images.
+
+## Unattended agent (PC off)
+
+The local Docker worker only runs while this machine is on. To keep
+looking and applying without it:
+
+1. Create a free hosted Postgres (Neon is enough). Enable `sslmode=require`.
+2. Copy your local jobs, profile, and applications into that database:
+
+   ```powershell
+   .\scripts\dump-local-db.ps1
+   psql "postgresql://USER:PASS@HOST/neondb?sslmode=require" -f jobpilot-local.dump.sql
+   ```
+
+3. Push secrets (JWT and encryption key come from your local `.env`):
+
+   ```powershell
+   .\scripts\setup-github-agent-secrets.ps1 -DatabaseUrl "postgresql://USER:PASS@HOST/neondb?sslmode=require"
+   ```
+
+4. In GitHub → Actions → **Unattended agent**, run it once with
+   `mode=discover`. After that it ticks about every 20 minutes and
+   rediscovers boards about every 6 hours.
+
+The workflow turns auto-apply on for every account in that database. It
+does not scrape LinkedIn, Google, Indeed, or Job Bank.
 
 ## Kubernetes / k3s (Phase 11, local)
 

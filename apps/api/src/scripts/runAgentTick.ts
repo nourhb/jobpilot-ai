@@ -31,8 +31,14 @@ async function main(): Promise<void> {
   box.processors = createProcessors(queue);
   const processors = box.processors;
 
-  logger.info("Running in-process agent tick (discovery + match + auto-apply)");
-  await processors.processDiscovery();
+  const skipDiscovery = process.argv.includes("--skip-discovery");
+  if (skipDiscovery) {
+    logger.info("Running in-process agent tick (match + auto-apply, no discovery)");
+    await processors.processTick();
+  } else {
+    logger.info("Running in-process agent tick (discovery + match + auto-apply)");
+    await processors.processDiscovery();
+  }
   logger.info("In-process agent tick finished");
 }
 

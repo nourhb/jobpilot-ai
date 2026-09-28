@@ -48,8 +48,8 @@ pnpm dev
 - Web: http://localhost:5173
 - API: http://localhost:4000/api/health
 
-See [`docs/deployment.md`](docs/deployment.md) for the full Docker
-Compose flow.
+See [`docs/deployment.md`](docs/deployment.md) for Docker Compose and
+for running the agent on GitHub Actions while this PC is off.
 
 ## Commands
 
