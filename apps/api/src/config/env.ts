@@ -6,6 +6,9 @@ import { z } from "zod";
  * startup means a misconfigured deployment fails fast with a clear error
  * instead of crashing (or silently misbehaving) deep inside a request.
  */
+const emptyToUndefined = (value: unknown) =>
+  value === undefined || value === null || (typeof value === "string" && value.trim() === "") ? undefined : value;
+
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   PORT: z.coerce.number().int().positive().default(4000),
@@ -46,6 +49,14 @@ const envSchema = z.object({
   ENCRYPTION_KEY: z.string().default("dev-only-insecure-key-change-me-please"),
 
   CORS_ORIGIN: z.string().default("http://localhost:5173"),
+
+  APPLICATION_COPY_EMAIL: z.string().email().default("nourhb58@gmail.com"),
+  SMTP_HOST: z.preprocess(emptyToUndefined, z.string().optional()),
+  SMTP_PORT: z.preprocess(emptyToUndefined, z.coerce.number().int().positive().default(587)),
+  SMTP_USER: z.preprocess(emptyToUndefined, z.string().optional()),
+  SMTP_PASS: z.preprocess(emptyToUndefined, z.string().optional()),
+  SMTP_FROM: z.preprocess(emptyToUndefined, z.string().optional()),
+  RESEND_API_KEY: z.preprocess(emptyToUndefined, z.string().optional()),
 });
 
 const parsed = envSchema.safeParse(process.env);

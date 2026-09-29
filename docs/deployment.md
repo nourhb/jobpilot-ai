@@ -117,6 +117,13 @@ looking and applying without it:
 The workflow turns auto-apply on for every account in that database. It
 does not scrape LinkedIn, Google, Indeed, or Job Bank.
 
+Each time the agent applies (submitted, sent to the company site for
+manual review, or failed), JobPilot emails a copy to
+`APPLICATION_COPY_EMAIL` (default `nourhb58@gmail.com`). Set SMTP or
+`RESEND_API_KEY` in `.env` and as GitHub secrets so the copy is delivered
+from your own inbox. Without those, the first copy asks that address to
+confirm FormSubmit; later copies then arrive there.
+
 ## Kubernetes / k3s (Phase 11, local)
 
 Manifests live in `deploy/k8s` with placeholder hosts

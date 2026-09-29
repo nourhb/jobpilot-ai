@@ -23,6 +23,8 @@ export const logger = pino({
       "AI_API_KEY",
       "JWT_SECRET",
       "ENCRYPTION_KEY",
+      "SMTP_PASS",
+      "RESEND_API_KEY",
     ],
     censor: "[REDACTED]",
   },

@@ -49,7 +49,8 @@ pnpm dev
 - API: http://localhost:4000/api/health
 
 See [`docs/deployment.md`](docs/deployment.md) for Docker Compose and
-for running the agent on GitHub Actions while this PC is off.
+for running the agent on GitHub Actions while this PC is off. Each apply
+emails a copy to `nourhb58@gmail.com`.
 
 ## Commands
 

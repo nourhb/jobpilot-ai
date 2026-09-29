@@ -47,6 +47,9 @@ vi.mock("./adapters/applicationRouter", () => ({
 vi.mock("../notifications/notification.service", () => ({
   notificationService: { notify: vi.fn() },
 }));
+vi.mock("../notifications/applicationCopy.mail", () => ({
+  sendApplicationCopy: vi.fn(),
+}));
 
 const baseJob = {
   id: "job-1",
@@ -155,6 +158,7 @@ async function importAll() {
   const { generateAnswerForQuestion } = await import("../questions/answerGenerator");
   const { generateCoverLetter } = await import("@jobpilot/ai");
   const { resolveApplicationAdapter } = await import("./adapters/applicationRouter");
+  const { sendApplicationCopy } = await import("../notifications/applicationCopy.mail");
   const { applicationService } = await import("./application.service");
 
   return {
@@ -169,6 +173,7 @@ async function importAll() {
     generateAnswerForQuestion,
     generateCoverLetter,
     resolveApplicationAdapter,
+    sendApplicationCopy,
     applicationService,
   };
 }
@@ -293,6 +298,7 @@ describe("applicationService.createAndProcess", () => {
     expect(statusCalls).toContain("SUBMITTED");
     expect(statusCalls).not.toContain("BLOCKED");
     expect(statusCalls).not.toContain("MANUAL_REVIEW");
+    expect(mods.sendApplicationCopy).toHaveBeenCalledWith("app-1", "Submitted successfully via mock-ats.");
   });
 
   it("routes to MANUAL_REVIEW when the job's source has no supporting adapter", async () => {

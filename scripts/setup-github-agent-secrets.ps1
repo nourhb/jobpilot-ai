@@ -34,5 +34,13 @@ if ($jwt.Length -lt 32) { throw "JWT_SECRET must be at least 32 characters" }
 gh secret set DATABASE_URL --body $DatabaseUrl
 gh secret set JWT_SECRET --body $jwt
 gh secret set ENCRYPTION_KEY --body $key
+
+foreach ($optional in @("SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASS", "SMTP_FROM", "RESEND_API_KEY", "APPLICATION_COPY_EMAIL")) {
+  $value = $vars[$optional]
+  if (-not [string]::IsNullOrWhiteSpace($value)) {
+    gh secret set $optional --body $value
+  }
+}
+
 Write-Host "Set DATABASE_URL, JWT_SECRET, and ENCRYPTION_KEY on the GitHub repo."
 Write-Host "Run the Unattended agent workflow once with mode=discover, or wait for the schedule."

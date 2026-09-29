@@ -20,6 +20,7 @@ import { evaluateApplication } from "./policyEngine";
 import { AppError } from "../middleware/errorHandler";
 import { logger } from "../lib/logger";
 import { notificationService } from "../notifications/notification.service";
+import { sendApplicationCopy } from "../notifications/applicationCopy.mail";
 
 /** Section 42: `hash(userId + source + externalJobId)` -- must always reduce to the same value for the same (user, job) pair, independent of *when* it's computed. */
 function computeIdempotencyKey(userId: string, sourceType: string, externalId: string): string {
@@ -56,6 +57,10 @@ async function notifyTerminalStatus(userId: string, applicationId: string, statu
       entityType: "Application",
       entityId: applicationId,
     });
+  }
+
+  if (status === "SUBMITTED" || status === "FAILED" || status === "MANUAL_REVIEW") {
+    await sendApplicationCopy(applicationId, message);
   }
 }
 
