@@ -1,4 +1,4 @@
-# JobPilot AI
+<img width="1915" height="910" alt="Screenshot 2026-09-30 163132" src="https://github.com/user-attachments/assets/2b56ed6a-e8fe-4041-8f88-678a20d07e8b" /># JobPilot AI
 
 Autonomous Canadian job discovery, matching, application preparation,
 permitted auto-application, cover-letter generation, application
@@ -85,3 +85,13 @@ docs/                      architecture, api, security, deployment
 - [`docs/api.md`](docs/api.md)
 - [`docs/security.md`](docs/security.md)
 - [`docs/deployment.md`](docs/deployment.md)
+![Uploading Screenshot 2026-09-30 163132.<img width="1920" height="1502" alt="screencapture-localhost-5173-dashboard-2026-09-30-16_30_08" src="https://github.com/user-attachments/assets/7a86ffb0-a8f4-464a-bd46-4e879f5a2c45" />
+<img width="1915" height="903" alt="Screenshot 2026-09-30 163114" src="https://github.com/user-attachments/assets/7d45786c-11ba-4d90-8228-0165b2a63853" />
+<img width="1915" height="903" alt="Screenshot 2026-09-30 163124" src="https://github.com/user-attachments/assets/ba720647-0593-4b4b-8276-596b570285b3" />
+png…]()
+<img width="1915" height="903" alt="Screenshot 2026-09-30 163143" src="https://github.com/user-attachments/assets/23bff044-fd66-45d1-a697-b36df35e6008" />
+<img width="1915" height="904" alt="Screenshot 2026-09-30 163150" src="https://github.com/user-attachments/assets/9ea0970c-0967-43f4-ba0c-61786729d075" />
+<img width="1914" height="901" alt="Screenshot 2026-09-30 163159" src="https://github.com/user-attachments/assets/98376a73-56b2-4d86-a93b-ec70690772a3" />
+<img width="1907" height="903" alt="Screenshot 2026-09-30 163209" src="https://github.com/user-attachments/assets/5e41eb5b-f53c-4cb4-ac36-f29c3dee82bc" />
+<img width="1915" height="907" alt="Screenshot 2026-09-30 163216" src="https://github.com/user-attachments/assets/3bd7b882-6e8c-4b87-8c41-3946142ef825" />
+<img width="1915" height="915" alt="Screenshot 2026-09-30 163103" src="https://github.com/user-attachments/assets/929e043e-cb5b-4a60-a113-4458fef7582f" />
