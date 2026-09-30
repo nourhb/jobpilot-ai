@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { ApiError } from "@/services/apiClient";
 import { PageHeader } from "@/components/PageHeader";
+import { PageSpinner } from "@/components/EmptyState";
 import { usePreferences, useUpdatePreferences } from "@/hooks/usePreferences";
 
 const EMPLOYMENT_TYPE_LABELS: Record<JobEmploymentType, string> = {
@@ -84,7 +85,7 @@ export function PreferencesPage() {
   }, [preferences]);
 
   if (isLoading || !form) {
-    return <p className="text-sm text-muted-foreground">Loading preferences...</p>;
+    return <PageSpinner label="Loading preferences" />;
   }
 
   function toggleEmploymentType(type: JobEmploymentType) {

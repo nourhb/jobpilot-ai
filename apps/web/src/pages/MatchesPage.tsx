@@ -3,7 +3,9 @@ import { Link } from "react-router-dom";
 import { JOB_EXPERIENCE_LABELS, type JobExperienceLevel } from "@jobpilot/shared";
 import { Bookmark } from "lucide-react";
 import { ApplyButton, resolveApplyHref } from "@/components/ApplyButton";
+import { EmptyState, PageSpinner } from "@/components/EmptyState";
 import { PageHeader } from "@/components/PageHeader";
+import { MatchBadge } from "@/components/StatusBadge";
 import { useRecommendedJobs } from "@/hooks/useJobs";
 import type { JobMatchListItem, JobRecord } from "@/services/jobsService";
 
@@ -32,13 +34,6 @@ const SOURCE_LABELS: Record<string, string> = {
   ASHBY: "Ashby",
   WORKABLE: "Workable",
   COMPANY: "Public feed",
-};
-
-const CATEGORY_LABELS: Record<string, string> = {
-  EXCELLENT: "Excellent match",
-  STRONG: "Strong match",
-  POTENTIAL: "Possible match",
-  LOW: "Partial match",
 };
 
 const AVATAR_COLORS = [
@@ -96,12 +91,6 @@ function readSavedIds(): string[] {
   }
 }
 
-function scoreTone(score: number): string {
-  if (score >= 80) return "bg-emerald-50 text-emerald-800";
-  if (score >= 70) return "bg-blue-50 text-blue-800";
-  return "bg-slate-100 text-slate-700";
-}
-
 export function MatchesPage() {
   const { data, isLoading, isError } = useRecommendedJobs();
   const [savedIds, setSavedIds] = useState<string[]>(readSavedIds);
@@ -115,38 +104,38 @@ export function MatchesPage() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-8">
+    <div className="mx-auto max-w-5xl space-y-8">
       <PageHeader
+        eyebrow="Recommended"
         title="For you"
         description="Jobs picked from your confirmed CV — skills and past titles only. Confirm items on your profile if this list is empty."
       />
 
-      {isLoading && <p className="text-sm text-muted-foreground">Matching jobs to your CV...</p>}
+      {isLoading && <PageSpinner label="Matching jobs to your CV" />}
       {isError && <p className="text-sm text-destructive">Could not load matches. Please try again.</p>}
 
       {data && !data.profileReady && (
-        <div className="rounded-md border bg-card px-5 py-8">
-          <p className="text-sm font-medium">Confirm your CV first</p>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Upload a resume and confirm at least one skill or work history item. Matching only uses verified
-            profile data, not the raw file.
-          </p>
-          <div className="mt-4 flex flex-wrap gap-3 text-sm">
-            <Link to="/resume" className="text-primary hover:underline">
-              Upload resume
-            </Link>
-            <Link to="/profile" className="text-primary hover:underline">
-              Confirm profile
-            </Link>
-          </div>
-        </div>
+        <EmptyState
+          title="Confirm your CV first"
+          description="Upload a resume and confirm at least one skill or work history item. Matching only uses verified profile data, not the raw file."
+          action={
+            <div className="flex gap-3 text-sm">
+              <Link to="/resume" className="text-primary hover:underline">
+                Upload resume
+              </Link>
+              <Link to="/profile" className="text-primary hover:underline">
+                Confirm profile
+              </Link>
+            </div>
+          }
+        />
       )}
 
       {data?.profileReady && data.items.length === 0 && (
-        <p className="text-sm text-muted-foreground">
-          No listings in the current catalog match your confirmed skills or titles. Add more confirmed
-          skills on your profile, or browse Find jobs.
-        </p>
+        <EmptyState
+          title="No matching listings yet"
+          description="Add more confirmed skills on your profile, or browse Find jobs."
+        />
       )}
 
       {data?.profileReady && data.items.length > 0 && (
@@ -155,16 +144,18 @@ export function MatchesPage() {
         </p>
       )}
 
-      <div className="divide-y">
-        {data?.items.map((item) => (
-          <MatchRow
-            key={item.job.id}
-            item={item}
-            saved={savedIds.includes(item.job.id)}
-            onToggleSaved={() => toggleSaved(item.job.id)}
-          />
-        ))}
-      </div>
+      {data && data.items.length > 0 && (
+        <div className="overflow-hidden rounded-xl border bg-card">
+          {data.items.map((item) => (
+            <MatchRow
+              key={item.job.id}
+              item={item}
+              saved={savedIds.includes(item.job.id)}
+              onToggleSaved={() => toggleSaved(item.job.id)}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -183,7 +174,7 @@ function MatchRow({
   const applyHref = resolveApplyHref(job);
 
   return (
-    <article className="flex items-start gap-4 py-5">
+    <article className="surface-row flex items-start gap-4 border-b px-5 py-5 last:border-b-0">
       <div
         className={`mt-0.5 flex size-11 shrink-0 items-center justify-center rounded-xl text-sm font-semibold ${avatarClass(job.company)}`}
       >
@@ -196,9 +187,7 @@ function MatchRow({
               <Link to={`/jobs/${job.id}`} className="text-base font-semibold leading-snug hover:underline">
                 {job.title}
               </Link>
-              <span className={`rounded-md px-2 py-0.5 text-xs font-medium ${scoreTone(item.score)}`}>
-                {item.score} · {CATEGORY_LABELS[item.matchCategory] ?? item.matchCategory}
-              </span>
+              <MatchBadge category={item.matchCategory} score={item.score} />
             </div>
             <p className="mt-1 text-sm text-foreground/80">{job.company}</p>
             <p className="mt-0.5 text-sm text-muted-foreground">

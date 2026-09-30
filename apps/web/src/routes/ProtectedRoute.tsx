@@ -7,8 +7,9 @@ export function ProtectedRoute() {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen items-center justify-center text-sm text-muted-foreground">
-        Loading...
+      <div className="flex h-screen flex-col items-center justify-center gap-3 bg-background text-sm text-muted-foreground">
+        <span className="size-8 animate-spin rounded-full border-2 border-border border-t-primary" />
+        Loading workspace
       </div>
     );
   }

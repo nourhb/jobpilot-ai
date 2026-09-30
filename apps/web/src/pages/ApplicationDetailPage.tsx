@@ -1,5 +1,7 @@
 import { Link, useParams } from "react-router-dom";
 import { ApplyButton, resolveApplyHref } from "@/components/ApplyButton";
+import { PageSpinner } from "@/components/EmptyState";
+import { MatchBadge, StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -15,7 +17,7 @@ export function ApplicationDetailPage() {
   const { data: application, isLoading, isError } = useApplication(id);
   const actions = useApplicationActions(id ?? "");
 
-  if (isLoading) return <p className="text-sm text-muted-foreground">Loading application...</p>;
+  if (isLoading) return <PageSpinner label="Loading application" />;
   if (isError || !application) return <p className="text-sm text-destructive">Application not found.</p>;
 
   const job = application.jobSnapshot;
@@ -35,6 +37,10 @@ export function ApplicationDetailPage() {
           </Link>
           <h1 className="page-title mt-3">{snapshotText(job, "title")}</h1>
           <p className="page-lede mt-2">{snapshotText(job, "company")}</p>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <StatusBadge status={application.status} />
+            <MatchBadge category={application.matchCategory} score={application.matchScore} />
+          </div>
         </div>
         <ApplyButton href={applyHref} jobId={application.job.id} size="default" />
       </div>
@@ -113,8 +119,12 @@ export function ApplicationDetailPage() {
           <p>Remote: {snapshotText(job, "remoteType")}</p>
           <p>Salary min: {snapshotText(job, "salaryMin")}</p>
           <p>Salary max: {snapshotText(job, "salaryMax")}</p>
-          <p>Match: {application.matchScore} ({application.matchCategory})</p>
-          <p>Status: {application.status}</p>
+          <p className="flex items-center gap-2">
+            Match: <MatchBadge category={application.matchCategory} score={application.matchScore} />
+          </p>
+          <p className="flex items-center gap-2">
+            Status: <StatusBadge status={application.status} />
+          </p>
           <p className="col-span-2">
             Apply link:{" "}
             {applyHref ? (
@@ -168,10 +178,10 @@ export function ApplicationDetailPage() {
         </CardHeader>
         <CardContent className="space-y-2">
           {application.events.map((event) => (
-            <p key={event.id} className="text-sm">
-              <span className="font-medium">{new Date(event.createdAt).toLocaleString()}</span>{" "}
-              <span className="text-muted-foreground">{event.status}</span>
-              {event.message ? ` — ${event.message}` : ""}
+            <p key={event.id} className="flex flex-wrap items-center gap-2 text-sm">
+              <span className="font-medium">{new Date(event.createdAt).toLocaleString()}</span>
+              <StatusBadge status={event.status} />
+              {event.message ? <span className="text-muted-foreground">{event.message}</span> : null}
             </p>
           ))}
         </CardContent>

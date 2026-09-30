@@ -1,24 +1,24 @@
 import { Link, useParams } from "react-router-dom";
+import { ApplyButton, resolveApplyHref } from "@/components/ApplyButton";
+import { PageSpinner } from "@/components/EmptyState";
+import { PageHeader } from "@/components/PageHeader";
+import { MatchBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { ApplyButton, resolveApplyHref } from "@/components/ApplyButton";
-import { PageHeader } from "@/components/PageHeader";
 import { useJob, useJobMatch } from "@/hooks/useJobs";
 import type { JobMatchRecord } from "@/services/jobsService";
 
-const MATCH_CATEGORY_STYLES: Record<string, string> = {
-  EXCELLENT: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
-  STRONG: "bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300",
-  POTENTIAL: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
-  LOW: "bg-muted text-muted-foreground",
-};
-
 function ScoreRow({ label, value }: { label: string; value: number }) {
   return (
-    <div className="flex items-center justify-between text-sm">
-      <span className="text-muted-foreground">{label}</span>
-      <span className="font-medium tabular-nums">{value}</span>
+    <div className="space-y-1 text-sm">
+      <div className="flex items-center justify-between">
+        <span className="text-muted-foreground">{label}</span>
+        <span className="font-mono text-xs tabular-nums">{value}</span>
+      </div>
+      <div className="h-1.5 rounded-full bg-muted">
+        <div className="h-1.5 rounded-full bg-primary" style={{ width: `${Math.max(0, Math.min(100, value))}%` }} />
+      </div>
     </div>
   );
 }
@@ -65,11 +65,7 @@ function MatchResult({
       <CardHeader className="flex flex-row items-center justify-between space-y-0">
         <CardTitle className="text-base">Match score</CardTitle>
         <div className="flex items-center gap-2">
-          <span
-            className={`rounded-full px-3 py-1 text-sm font-semibold ${MATCH_CATEGORY_STYLES[match.matchCategory] ?? ""}`}
-          >
-            {match.score} — {match.matchCategory}
-          </span>
+          <MatchBadge category={match.matchCategory} score={match.score} className="px-2.5 py-1 text-xs" />
           <ApplyButton href={applyHref} jobId={jobId} />
         </div>
       </CardHeader>
@@ -173,7 +169,7 @@ export function JobDetailPage() {
   const { data: match, refetch, isFetching, isFetched } = useJobMatch(id);
 
   if (isLoading || !job) {
-    return <p className="text-sm text-muted-foreground">Loading job...</p>;
+    return <PageSpinner label="Loading job" />;
   }
 
   const emails = extractApplyEmails(`${job.description}\n${job.descriptionHtml ?? ""}`);

@@ -51,8 +51,8 @@ export function ResumePage() {
         </CardHeader>
         <CardContent>
           <div
-            className={`flex flex-col items-center justify-center gap-2 rounded-md border-2 border-dashed p-10 text-center transition-colors ${
-              dragOver ? "border-primary bg-accent/50" : "border-input"
+            className={`flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-10 text-center transition-colors ${
+              dragOver ? "border-primary bg-primary/5" : "border-border bg-muted/30"
             }`}
             onDragOver={(e) => {
               e.preventDefault();

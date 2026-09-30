@@ -31,8 +31,8 @@ export function LoginPage() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-2xl">Log in</CardTitle>
-        <CardDescription>Use your JobPilot account to continue.</CardDescription>
+        <CardTitle className="text-2xl tracking-tight">Log in</CardTitle>
+        <CardDescription>Continue with your JobPilot account.</CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>

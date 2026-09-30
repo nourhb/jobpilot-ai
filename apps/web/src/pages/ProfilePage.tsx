@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { PageHeader } from "@/components/PageHeader";
+import { PageSpinner } from "@/components/EmptyState";
 import {
   profileUpdateSchema,
   WORK_AUTHORIZATION_STATUSES,
@@ -65,7 +66,7 @@ export function ProfilePage() {
   const { data: profile, isLoading } = useProfile();
 
   if (isLoading || !profile) {
-    return <p className="text-sm text-muted-foreground">Loading profile...</p>;
+    return <PageSpinner label="Loading profile" />;
   }
 
   const unverifiedExperienceIds = profile.workExperiences.filter((e) => !e.verified).map((e) => e.id);

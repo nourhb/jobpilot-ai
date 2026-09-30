@@ -18,6 +18,7 @@ import {
 } from "@jobpilot/shared";
 import { Bookmark, Search } from "lucide-react";
 import { ApplyButton, resolveApplyHref } from "@/components/ApplyButton";
+import { EmptyState, PageSpinner } from "@/components/EmptyState";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/PageHeader";
 import { useJobs } from "@/hooks/useJobs";
@@ -172,12 +173,14 @@ export function JobsPage() {
   };
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className="mx-auto max-w-5xl space-y-6">
       <PageHeader
+        eyebrow="Catalog"
         title="Find jobs"
         description="Public career boards only. Open a role to score it against your verified profile."
       />
 
+      <div className="rounded-xl border bg-card p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
       <div className="relative">
         <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input
@@ -188,7 +191,7 @@ export function JobsPage() {
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+      <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-3">
         <FilterSelect
           label="Work type"
           value={employmentType}
@@ -237,11 +240,12 @@ export function JobsPage() {
             setField("");
             setDomain("");
           }}
-          className="text-xs text-muted-foreground hover:text-foreground"
+          className="mt-3 text-xs text-muted-foreground hover:text-foreground"
         >
           Clear filters
         </button>
       )}
+      </div>
 
       <div className="flex items-center justify-between border-b">
         <div className="flex gap-6">
@@ -257,24 +261,31 @@ export function JobsPage() {
         )}
       </div>
 
-      {isLoading && <p className="text-sm text-muted-foreground">Loading jobs...</p>}
+      {isLoading && <PageSpinner label="Loading jobs" />}
       {isError && <p className="text-sm text-destructive">Could not load jobs. Please try again.</p>}
       {!isLoading && items.length === 0 && (
-        <p className="text-sm text-muted-foreground">
-          {tab === "saved" ? "No saved jobs yet. Bookmark a posting to keep it here." : "No jobs match that search."}
-        </p>
+        <EmptyState
+          title={tab === "saved" ? "No saved jobs yet" : "No jobs match that search"}
+          description={
+            tab === "saved"
+              ? "Bookmark a posting to keep it here."
+              : "Try a different title, company, or filter."
+          }
+        />
       )}
 
-      <div className="divide-y">
-        {items.map((job) => (
-          <JobResultRow
-            key={job.id}
-            job={job}
-            saved={savedIds.includes(job.id)}
-            onToggleSaved={() => toggleSaved(job.id)}
-          />
-        ))}
-      </div>
+      {items.length > 0 && (
+        <div className="overflow-hidden rounded-xl border bg-card">
+          {items.map((job) => (
+            <JobResultRow
+              key={job.id}
+              job={job}
+              saved={savedIds.includes(job.id)}
+              onToggleSaved={() => toggleSaved(job.id)}
+            />
+          ))}
+        </div>
+      )}
 
       {tab === "postings" && data && data.pagination.totalPages > 1 && (
         <div className="flex items-center justify-between py-4 text-sm text-muted-foreground">
@@ -333,6 +344,12 @@ function FilterSelect({
   );
 }
 
+function Chip({ children }: { children: ReactNode }) {
+  return (
+    <span className="rounded-md bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground">{children}</span>
+  );
+}
+
 function TabButton({
   active,
   onClick,
@@ -369,7 +386,7 @@ function JobResultRow({
   const degree = mentionsDegree(job.description);
 
   return (
-    <article className="flex items-start gap-4 py-5">
+    <article className="surface-row flex items-start gap-4 border-b px-5 py-5 last:border-b-0">
       <div
         className={`mt-0.5 flex size-11 shrink-0 items-center justify-center rounded-xl text-sm font-semibold ${avatarClass(job.company)}`}
       >
@@ -385,15 +402,15 @@ function JobResultRow({
             <p className="mt-0.5 text-sm text-muted-foreground">
               {locationLine(job)} · via {viaLabel(job)}
             </p>
-            <p className="mt-2 flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
-              {posted && <span>{posted}</span>}
-              <span>{EMPLOYMENT_LABELS[job.employmentType] ?? job.employmentType}</span>
+            <p className="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+              {posted && <Chip>{posted}</Chip>}
+              <Chip>{EMPLOYMENT_LABELS[job.employmentType] ?? job.employmentType}</Chip>
               {job.experienceLevel && (
-                <span>{JOB_EXPERIENCE_LABELS[job.experienceLevel as JobExperienceLevel] ?? job.experienceLevel}</span>
+                <Chip>{JOB_EXPERIENCE_LABELS[job.experienceLevel as JobExperienceLevel] ?? job.experienceLevel}</Chip>
               )}
-              <span>{REMOTE_LABELS[job.remoteType] ?? job.remoteType}</span>
-              {degree === false && <span>No degree mentioned</span>}
-              {salary && <span>{salary}</span>}
+              <Chip>{REMOTE_LABELS[job.remoteType] ?? job.remoteType}</Chip>
+              {degree === false && <Chip>No degree mentioned</Chip>}
+              {salary && <Chip>{salary}</Chip>}
             </p>
           </div>
           <div className="flex shrink-0 items-center gap-2">

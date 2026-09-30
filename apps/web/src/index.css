@@ -2,26 +2,36 @@
 
 @theme {
   --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 
-  --color-border: hsl(214 18% 86%);
+  --color-border: hsl(214 22% 88%);
   --color-input: hsl(0 0% 100%);
-  --color-ring: hsl(221 70% 40%);
-  --color-background: hsl(210 20% 98%);
-  --color-foreground: hsl(222 47% 11%);
-  --color-primary: hsl(221 70% 40%);
+  --color-ring: hsl(224 72% 40%);
+  --color-background: hsl(220 22% 97%);
+  --color-foreground: hsl(222 40% 12%);
+  --color-primary: hsl(224 72% 38%);
   --color-primary-foreground: hsl(0 0% 100%);
-  --color-muted: hsl(210 18% 95%);
-  --color-muted-foreground: hsl(215 14% 38%);
+  --color-muted: hsl(216 20% 94%);
+  --color-muted-foreground: hsl(215 14% 40%);
   --color-destructive: hsl(4 72% 46%);
   --color-destructive-foreground: hsl(0 0% 100%);
   --color-card: hsl(0 0% 100%);
-  --color-card-foreground: hsl(222 47% 11%);
-  --color-secondary: hsl(210 16% 94%);
-  --color-secondary-foreground: hsl(222 47% 11%);
-  --color-accent: hsl(210 16% 94%);
-  --color-accent-foreground: hsl(222 47% 11%);
+  --color-card-foreground: hsl(222 40% 12%);
+  --color-secondary: hsl(216 18% 94%);
+  --color-secondary-foreground: hsl(222 40% 12%);
+  --color-accent: hsl(216 24% 94%);
+  --color-accent-foreground: hsl(222 40% 12%);
   --color-popover: hsl(0 0% 100%);
-  --color-popover-foreground: hsl(222 47% 11%);
+  --color-popover-foreground: hsl(222 40% 12%);
+  --color-success: hsl(152 55% 32%);
+  --color-success-foreground: hsl(0 0% 100%);
+  --color-warning: hsl(36 90% 40%);
+  --color-warning-foreground: hsl(0 0% 100%);
+  --color-sidebar: hsl(222 28% 12%);
+  --color-sidebar-foreground: hsl(210 20% 92%);
+  --color-sidebar-muted: hsl(215 16% 62%);
+  --color-sidebar-accent: hsl(222 24% 18%);
+  --color-sidebar-border: hsl(222 20% 18%);
 }
 
 @layer base {
@@ -37,11 +47,12 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
-    letter-spacing: -0.01em;
+    letter-spacing: -0.011em;
+    -webkit-font-smoothing: antialiased;
   }
 
   ::selection {
-    background: hsl(221 70% 40% / 0.16);
+    background: hsl(224 72% 38% / 0.16);
   }
 
   :focus-visible {
@@ -51,10 +62,10 @@
 
 @layer components {
   .page-title {
-    font-size: 1.75rem;
+    font-size: 1.625rem;
     font-weight: 600;
-    line-height: 1.25;
-    letter-spacing: -0.02em;
+    line-height: 1.2;
+    letter-spacing: -0.03em;
   }
 
   .page-lede {
@@ -62,5 +73,30 @@
     color: var(--color-muted-foreground);
     font-size: 0.925rem;
     line-height: 1.55;
+  }
+
+  .page-eyebrow {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-muted-foreground);
+  }
+
+  .stat-value {
+    font-family: var(--font-mono);
+    font-size: 1.75rem;
+    font-weight: 600;
+    letter-spacing: -0.04em;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .surface-row {
+    transition: background-color 140ms ease;
+  }
+
+  .surface-row:hover {
+    background-color: hsl(216 24% 97%);
   }
 }
